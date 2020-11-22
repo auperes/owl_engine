@@ -18,9 +18,9 @@ set(HEADERS
     render_pass.h
     semaphore.h
     shader_module.h
-    shader.h
     surface.h
     swapchain.h
+    swapchain_support.h
     vulkan_object.h)
 
 set(SOURCES
@@ -43,9 +43,9 @@ set(SOURCES
     render_pass.cpp
     semaphore.cpp
     shader_module.cpp
-    shader.cpp
     surface.cpp
-    swapchain.cpp)
+    swapchain.cpp
+    swapchain_support.cpp)
 
 add_library(owlVulkan SHARED ${SOURCES} ${HEADERS})
 

@@ -3,7 +3,7 @@
 #include <set>
 
 #include "queue_families_indices.h"
-#include "swapchain.h"
+#include "swapchain_support.h"
 #include "vulkan_collections_helpers.h"
 
 namespace owl::vulkan
@@ -42,7 +42,7 @@ namespace owl::vulkan
         bool is_swapchain_suitable = false;
         if (are_required_extensions_supported)
         {
-            vulkan::swapchain_support swapchain_support = vulkan::query_swapchain_support(device, _surface->get_vk_handle());
+            swapchain_support swapchain_support = vulkan::query_swapchain_support(device, _surface->get_vk_handle());
             is_swapchain_suitable = !swapchain_support.formats.empty() && !swapchain_support.presentation_modes.empty();
         }
 

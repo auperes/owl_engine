@@ -13,24 +13,6 @@
 
 namespace owl::vulkan
 {
-    struct swapchain_support
-    {
-        VkSurfaceCapabilitiesKHR capabilities;
-        std::vector<VkSurfaceFormatKHR> formats;
-        std::vector<VkPresentModeKHR> presentation_modes;
-    };
-
-    swapchain_support query_swapchain_support(const VkPhysicalDevice& device, const VkSurfaceKHR& surface);
-
-    VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
-    VkPresentModeKHR choose_presentation_mode(const std::vector<VkPresentModeKHR>& available_presentation_modes);
-    VkExtent2D choose_extent(const VkSurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height);
-
-    VkSwapchainCreateInfoKHR create_swapchain_info(const VkPhysicalDevice& physical_device,
-                                                   const VkSurfaceKHR& surface,
-                                                   uint32_t width,
-                                                   uint32_t height);
-
     class swapchain : public vulkan_object<VkSwapchainKHR>
     {
     public:
@@ -53,5 +35,14 @@ namespace owl::vulkan
         std::vector<VkImage> _vk_swapchain_images;
         VkFormat _vk_swapchain_image_format;
         VkExtent2D _vk_swapchain_extent;
+
+        VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
+        VkPresentModeKHR choose_presentation_mode(const std::vector<VkPresentModeKHR>& available_presentation_modes);
+        VkExtent2D choose_extent(const VkSurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height);
+
+        VkSwapchainCreateInfoKHR create_swapchain_info(const VkPhysicalDevice& physical_device,
+                                                       const VkSurfaceKHR& surface,
+                                                       uint32_t width,
+                                                       uint32_t height);
     };
 } // namespace owl::vulkan

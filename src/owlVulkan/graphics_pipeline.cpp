@@ -35,7 +35,6 @@ namespace owl::vulkan
         VkRect2D scissor{};
         scissor.offset = {0, 0};
         scissor.extent = swapchain->get_vk_swapchain_extent();
-        // auto viewport_state_create_info = create_viewport_state_info(swapchain, viewport, scissor);
         VkPipelineViewportStateCreateInfo viewport_state_create_info{};
         viewport_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
         viewport_state_create_info.viewportCount = 1;

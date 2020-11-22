@@ -20,7 +20,8 @@ set(HEADERS
     shader_module.h
     shader.h
     surface.h
-    swapchain.h)
+    swapchain.h
+    vulkan_object.h)
 
 set(SOURCES
     command_buffers.cpp

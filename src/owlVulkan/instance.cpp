@@ -6,8 +6,8 @@
 #include <stdexcept>
 
 #include "debug_messenger.h"
-#include "vulkan_collections_helpers.h"
 #include "helpers/vulkan_helpers.h"
+#include "vulkan_collections_helpers.h"
 
 namespace owl::vulkan
 {
@@ -47,11 +47,11 @@ namespace owl::vulkan
             create_info.pNext = nullptr;
         }
 
-        VkResult result = vkCreateInstance(&create_info, nullptr, &_vk_instance);
+        VkResult result = vkCreateInstance(&create_info, nullptr, &_vk_handle);
         vulkan::helpers::handle_result(result, "Failed to create instance");
     }
 
-    instance::~instance() { vkDestroyInstance(_vk_instance, nullptr); }
+    instance::~instance() { vkDestroyInstance(_vk_handle, nullptr); }
 
     bool instance::check_validation_layer_support(const std::vector<const char*>& validation_layers)
     {
@@ -60,10 +60,9 @@ namespace owl::vulkan
         bool all_layers_found = true;
         for (const auto layer_name : validation_layers)
         {
-            auto result = std::find_if(available_layers.begin(), available_layers.end(),
-                                       [layer_name](const auto& layer_properties) {
-                                           return strcmp(layer_name, layer_properties.layerName) == 0;
-                                       });
+            auto result = std::find_if(available_layers.begin(), available_layers.end(), [layer_name](const auto& layer_properties) {
+                return strcmp(layer_name, layer_properties.layerName) == 0;
+            });
 
             if (result == available_layers.end())
             {

@@ -44,9 +44,9 @@ namespace owl::vulkan
         render_pass_info.dependencyCount = 1;
         render_pass_info.pDependencies = &dependency;
 
-        auto result = vkCreateRenderPass(_logical_device->get_vk_device(), &render_pass_info, nullptr, &_vk_render_pass);
+        auto result = vkCreateRenderPass(_logical_device->get_vk_handle(), &render_pass_info, nullptr, &_vk_handle);
         vulkan::helpers::handle_result(result, "Failed to create render pass");
     }
 
-    render_pass::~render_pass() { vkDestroyRenderPass(_logical_device->get_vk_device(), _vk_render_pass, nullptr); }
+    render_pass::~render_pass() { vkDestroyRenderPass(_logical_device->get_vk_handle(), _vk_handle, nullptr); }
 } // namespace owl::vulkan

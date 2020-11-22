@@ -5,19 +5,17 @@
 #include <memory>
 
 #include "instance.h"
+#include "vulkan_object.h"
 
 namespace owl::vulkan
 {
-    class surface
+    class surface : public vulkan_object<VkSurfaceKHR>
     {
     public:
         surface(const std::shared_ptr<instance>& instance, VkSurfaceKHR vk_surface);
         ~surface();
 
-        const VkSurfaceKHR& get_vk_surface() const { return _vk_surface; }
-
     private:
-        VkSurfaceKHR _vk_surface;
         std::shared_ptr<instance> _instance;
     };
 } // namespace owl::vulkan

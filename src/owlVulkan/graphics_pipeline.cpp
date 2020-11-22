@@ -1,7 +1,7 @@
 #include "graphics_pipeline.h"
 
-#include "shader_module.h"
 #include "helpers/vulkan_helpers.h"
+#include "shader_module.h"
 
 namespace owl::vulkan
 {
@@ -17,8 +17,8 @@ namespace owl::vulkan
         vulkan::shader_module vertex_shader_module(vertex_shader_file, _logical_device);
         vulkan::shader_module fragment_shader_module(fragment_shader_file, _logical_device);
 
-        auto fragment_create_info = create_shader_stage_info(vertex_shader_module.get_vk_shader_module(), VK_SHADER_STAGE_FRAGMENT_BIT);
-        auto vertex_create_info = create_shader_stage_info(fragment_shader_module.get_vk_shader_module(), VK_SHADER_STAGE_VERTEX_BIT);
+        auto fragment_create_info = create_shader_stage_info(vertex_shader_module.get_vk_handle(), VK_SHADER_STAGE_FRAGMENT_BIT);
+        auto vertex_create_info = create_shader_stage_info(fragment_shader_module.get_vk_handle(), VK_SHADER_STAGE_VERTEX_BIT);
         VkPipelineShaderStageCreateInfo shader_stages_infos[] = {vertex_create_info, fragment_create_info};
 
         auto vertex_input_create_info = create_vertex_input_state_info();
@@ -70,18 +70,18 @@ namespace owl::vulkan
         graphics_pipeline_info.pDepthStencilState = nullptr;
         graphics_pipeline_info.pColorBlendState = &color_blend_state_info;
         graphics_pipeline_info.pDynamicState = nullptr;
-        graphics_pipeline_info.layout = pipeline_layout->get_vk_pipeline_layout();
-        graphics_pipeline_info.renderPass = render_pass->get_vk_render_pass();
+        graphics_pipeline_info.layout = pipeline_layout->get_vk_handle();
+        graphics_pipeline_info.renderPass = render_pass->get_vk_handle();
         graphics_pipeline_info.subpass = 0;
         graphics_pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
         graphics_pipeline_info.basePipelineIndex = -1;
 
         auto result =
-            vkCreateGraphicsPipelines(_logical_device->get_vk_device(), VK_NULL_HANDLE, 1, &graphics_pipeline_info, nullptr, &_vk_pipeline);
+            vkCreateGraphicsPipelines(_logical_device->get_vk_handle(), VK_NULL_HANDLE, 1, &graphics_pipeline_info, nullptr, &_vk_handle);
         vulkan::helpers::handle_result(result, "Failed to create graphics pipeline");
     }
 
-    graphics_pipeline::~graphics_pipeline() { vkDestroyPipeline(_logical_device->get_vk_device(), _vk_pipeline, nullptr); }
+    graphics_pipeline::~graphics_pipeline() { vkDestroyPipeline(_logical_device->get_vk_handle(), _vk_handle, nullptr); }
 
     VkPipelineShaderStageCreateInfo graphics_pipeline::create_shader_stage_info(const VkShaderModule& shader_module,
                                                                                 VkShaderStageFlagBits shader_stage)

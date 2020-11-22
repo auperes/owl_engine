@@ -3,8 +3,8 @@
 #include <set>
 #include <vector>
 
-#include "queue_families_indices.h"
 #include "helpers/vulkan_helpers.h"
+#include "queue_families_indices.h"
 
 namespace owl::vulkan
 {
@@ -14,8 +14,7 @@ namespace owl::vulkan
                                    const std::vector<const char*>& validation_layers,
                                    bool enable_validation_layers)
     {
-        vulkan::queue_families_indices indices =
-            vulkan::find_queue_families(physical_device->get_vk_physical_device(), surface->get_vk_surface());
+        vulkan::queue_families_indices indices = vulkan::find_queue_families(physical_device->get_vk_handle(), surface->get_vk_handle());
 
         std::set<uint32_t> unique_queue_families{indices.graphics_family.value(), indices.presentation_family.value()};
         std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
@@ -50,15 +49,15 @@ namespace owl::vulkan
         else
             create_info.enabledLayerCount = 0;
 
-        auto result = vkCreateDevice(physical_device->get_vk_physical_device(), &create_info, nullptr, &_vk_device);
+        auto result = vkCreateDevice(physical_device->get_vk_handle(), &create_info, nullptr, &_vk_handle);
         vulkan::helpers::handle_result(result, "Failed to create logical device");
 
-        vkGetDeviceQueue(_vk_device, indices.graphics_family.value(), 0, &_vk_graphics_queue);
-        vkGetDeviceQueue(_vk_device, indices.presentation_family.value(), 0, &_vk_presentation_queue);
+        vkGetDeviceQueue(_vk_handle, indices.graphics_family.value(), 0, &_vk_graphics_queue);
+        vkGetDeviceQueue(_vk_handle, indices.presentation_family.value(), 0, &_vk_presentation_queue);
     }
 
-    logical_device::~logical_device() { vkDestroyDevice(_vk_device, nullptr); }
+    logical_device::~logical_device() { vkDestroyDevice(_vk_handle, nullptr); }
 
-    void logical_device::wait_idle() { vkDeviceWaitIdle(_vk_device); }
+    void logical_device::wait_idle() { vkDeviceWaitIdle(_vk_handle); }
 
 } // namespace owl::vulkan

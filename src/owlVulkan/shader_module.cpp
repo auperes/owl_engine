@@ -15,12 +15,12 @@ namespace owl::vulkan
         create_info.codeSize = shader_code.size();
         create_info.pCode = reinterpret_cast<const uint32_t*>(shader_code.data());
 
-        auto result = vkCreateShaderModule(_logical_device->get_vk_device(), &create_info, nullptr, &_vk_shader_module);
+        auto result = vkCreateShaderModule(_logical_device->get_vk_handle(), &create_info, nullptr, &_vk_handle);
         if (result != VK_SUCCESS)
         {
             throw std::runtime_error("Failed to create shader module: " + std::to_string(result));
         }
     }
 
-    shader_module::~shader_module() { vkDestroyShaderModule(_logical_device->get_vk_device(), _vk_shader_module, nullptr); }
+    shader_module::~shader_module() { vkDestroyShaderModule(_logical_device->get_vk_handle(), _vk_handle, nullptr); }
 } // namespace owl::vulkan

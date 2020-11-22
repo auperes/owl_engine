@@ -87,7 +87,7 @@ namespace owl
     void engine::create_surface()
     {
         VkSurfaceKHR vk_surface;
-        auto result = glfwCreateWindowSurface(_instance->get_vk_instance(), _window, nullptr, &vk_surface);
+        auto result = glfwCreateWindowSurface(_instance->get_vk_handle(), _window, nullptr, &vk_surface);
         _surface = std::make_shared<vulkan::surface>(_instance, vk_surface);
         vulkan::helpers::handle_result(result, "Failed to create window surface");
     }
@@ -188,10 +188,10 @@ namespace owl
         _in_flight_fences[_current_frame]->wait_for_fence();
 
         uint32_t image_index;
-        vkAcquireNextImageKHR(_logical_device->get_vk_device(),
-                              _swapchain->get_vk_swapchain(),
+        vkAcquireNextImageKHR(_logical_device->get_vk_handle(),
+                              _swapchain->get_vk_handle(),
                               UINT64_MAX,
-                              _image_available_semaphores[_current_frame]->get_vk_semaphore(),
+                              _image_available_semaphores[_current_frame]->get_vk_handle(),
                               VK_NULL_HANDLE,
                               &image_index);
 
@@ -200,7 +200,7 @@ namespace owl
 
         _in_flight_images[image_index] = _in_flight_fences[_current_frame];
 
-        VkSemaphore wait_semaphores[] = {_image_available_semaphores[_current_frame]->get_vk_semaphore()};
+        VkSemaphore wait_semaphores[] = {_image_available_semaphores[_current_frame]->get_vk_handle()};
         VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
         VkSubmitInfo submit_info{};
@@ -211,14 +211,14 @@ namespace owl
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &_command_buffers->get_vk_command_buffers()[image_index];
 
-        VkSemaphore signal_semaphores[] = {_render_finished_semaphores[_current_frame]->get_vk_semaphore()};
+        VkSemaphore signal_semaphores[] = {_render_finished_semaphores[_current_frame]->get_vk_handle()};
         submit_info.signalSemaphoreCount = 1;
         submit_info.pSignalSemaphores = signal_semaphores;
 
-        vkResetFences(_logical_device->get_vk_device(), 1, &_in_flight_fences[_current_frame]->get_vk_fence());
+        vkResetFences(_logical_device->get_vk_handle(), 1, &_in_flight_fences[_current_frame]->get_vk_handle());
 
         auto result =
-            vkQueueSubmit(_logical_device->get_vk_graphics_queue(), 1, &submit_info, _in_flight_fences[_current_frame]->get_vk_fence());
+            vkQueueSubmit(_logical_device->get_vk_graphics_queue(), 1, &submit_info, _in_flight_fences[_current_frame]->get_vk_handle());
         vulkan::helpers::handle_result(result, "Failed to submit draw command buffer");
 
         VkPresentInfoKHR presentation_info{};
@@ -226,7 +226,7 @@ namespace owl
         presentation_info.waitSemaphoreCount = 1;
         presentation_info.pWaitSemaphores = signal_semaphores;
 
-        VkSwapchainKHR swapchains[] = {_swapchain->get_vk_swapchain()};
+        VkSwapchainKHR swapchains[] = {_swapchain->get_vk_handle()};
         presentation_info.swapchainCount = 1;
         presentation_info.pSwapchains = swapchains;
         presentation_info.pImageIndices = &image_index;

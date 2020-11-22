@@ -11,11 +11,11 @@ namespace owl::vulkan
         fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        auto fence_result = vkCreateFence(_logical_device->get_vk_device(), &fence_info, nullptr, &_vk_fence);
+        auto fence_result = vkCreateFence(_logical_device->get_vk_handle(), &fence_info, nullptr, &_vk_handle);
         vulkan::helpers::handle_result(fence_result, "Failed to create fence");
     }
 
-    fence::~fence() { vkDestroyFence(_logical_device->get_vk_device(), _vk_fence, nullptr); }
+    fence::~fence() { vkDestroyFence(_logical_device->get_vk_handle(), _vk_handle, nullptr); }
 
-    void fence::wait_for_fence() { vkWaitForFences(_logical_device->get_vk_device(), 1, &_vk_fence, VK_TRUE, UINT64_MAX); }
+    void fence::wait_for_fence() { vkWaitForFences(_logical_device->get_vk_handle(), 1, &_vk_handle, VK_TRUE, UINT64_MAX); }
 } // namespace owl::vulkan

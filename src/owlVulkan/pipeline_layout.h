@@ -5,19 +5,17 @@
 #include <memory>
 
 #include "logical_device.h"
+#include "vulkan_object.h"
 
 namespace owl::vulkan
 {
-    class pipeline_layout
+    class pipeline_layout : public vulkan_object<VkPipelineLayout>
     {
     public:
         pipeline_layout(const std::shared_ptr<logical_device>& logical_device);
         ~pipeline_layout();
 
-        const VkPipelineLayout& get_vk_pipeline_layout() const { return _vk_pipeline_layout; }
-
     private:
-        VkPipelineLayout _vk_pipeline_layout;
         std::shared_ptr<logical_device> _logical_device;
     };
 } // namespace owl::vulkan

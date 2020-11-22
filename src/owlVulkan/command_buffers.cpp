@@ -17,11 +17,11 @@ namespace owl::vulkan
 
         VkCommandBufferAllocateInfo allocate_info{};
         allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocate_info.commandPool = _command_pool->get_vk_command_pool();
+        allocate_info.commandPool = _command_pool->get_vk_handle();
         allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocate_info.commandBufferCount = static_cast<uint32_t>(_vk_command_buffers.size());
 
-        auto result = vkAllocateCommandBuffers(_logical_device->get_vk_device(), &allocate_info, _vk_command_buffers.data());
+        auto result = vkAllocateCommandBuffers(_logical_device->get_vk_handle(), &allocate_info, _vk_command_buffers.data());
         vulkan::helpers::handle_result(result, "Failed to allocate command buffers");
 
         for (size_t i = 0; i < _vk_command_buffers.size(); ++i)
@@ -36,8 +36,8 @@ namespace owl::vulkan
 
             VkRenderPassBeginInfo render_pass_info{};
             render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            render_pass_info.renderPass = render_pass->get_vk_render_pass();
-            render_pass_info.framebuffer = swapchain_framebuffers[i]->get_vk_framebuffer();
+            render_pass_info.renderPass = render_pass->get_vk_handle();
+            render_pass_info.framebuffer = swapchain_framebuffers[i]->get_vk_handle();
             render_pass_info.renderArea.offset = {0, 0};
             render_pass_info.renderArea.extent = swapchain->get_vk_swapchain_extent();
 
@@ -47,7 +47,7 @@ namespace owl::vulkan
 
             vkCmdBeginRenderPass(_vk_command_buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
-            vkCmdBindPipeline(_vk_command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline->get_vk_pipeline());
+            vkCmdBindPipeline(_vk_command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline->get_vk_handle());
             vkCmdDraw(_vk_command_buffers[i], 3, 1, 0, 0);
 
             vkCmdEndRenderPass(_vk_command_buffers[i]);
@@ -59,8 +59,8 @@ namespace owl::vulkan
 
     command_buffers::~command_buffers()
     {
-        vkFreeCommandBuffers(_logical_device->get_vk_device(),
-                             _command_pool->get_vk_command_pool(),
+        vkFreeCommandBuffers(_logical_device->get_vk_handle(),
+                             _command_pool->get_vk_handle(),
                              static_cast<uint32_t>(_vk_command_buffers.size()),
                              _vk_command_buffers.data());
     }

@@ -2,9 +2,9 @@
 
 #include <algorithm>
 
+#include "helpers/vulkan_helpers.h"
 #include "queue_families_indices.h"
 #include "vulkan_collections_helpers.h"
-#include "helpers/vulkan_helpers.h"
 
 namespace owl::vulkan
 {
@@ -117,15 +117,15 @@ namespace owl::vulkan
         , _surface(surface)
     {
         VkSwapchainCreateInfoKHR create_info =
-            vulkan::create_swapchain_info(_physical_device->get_vk_physical_device(), _surface->get_vk_surface(), width, height);
+            vulkan::create_swapchain_info(_physical_device->get_vk_handle(), _surface->get_vk_handle(), width, height);
 
-        auto result = vkCreateSwapchainKHR(_logical_device->get_vk_device(), &create_info, nullptr, &_vk_swapchain);
+        auto result = vkCreateSwapchainKHR(_logical_device->get_vk_handle(), &create_info, nullptr, &_vk_handle);
         vulkan::helpers::handle_result(result, "Failed to create swap chain");
 
-        _vk_swapchain_images = vulkan::helpers::get_swapchain_images(_logical_device->get_vk_device(), _vk_swapchain);
+        _vk_swapchain_images = vulkan::helpers::get_swapchain_images(_logical_device->get_vk_handle(), _vk_handle);
         _vk_swapchain_image_format = create_info.imageFormat;
         _vk_swapchain_extent = create_info.imageExtent;
     }
 
-    swapchain::~swapchain() { vkDestroySwapchainKHR(_logical_device->get_vk_device(), _vk_swapchain, nullptr); }
+    swapchain::~swapchain() { vkDestroySwapchainKHR(_logical_device->get_vk_handle(), _vk_handle, nullptr); }
 } // namespace owl::vulkan

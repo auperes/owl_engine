@@ -9,6 +9,7 @@
 #include "logical_device.h"
 #include "physical_device.h"
 #include "surface.h"
+#include "vulkan_object.h"
 
 namespace owl::vulkan
 {
@@ -30,7 +31,7 @@ namespace owl::vulkan
                                                    uint32_t width,
                                                    uint32_t height);
 
-    class swapchain
+    class swapchain : public vulkan_object<VkSwapchainKHR>
     {
     public:
         swapchain(const std::shared_ptr<physical_device>& physical_device,
@@ -40,14 +41,11 @@ namespace owl::vulkan
                   const uint32_t height);
         ~swapchain();
 
-        const VkSwapchainKHR& get_vk_swapchain() const { return _vk_swapchain; }
-
         const std::vector<VkImage>& get_vk_swapchain_images() const { return _vk_swapchain_images; };
         const VkFormat& get_vk_swapchain_image_format() const { return _vk_swapchain_image_format; };
         const VkExtent2D& get_vk_swapchain_extent() const { return _vk_swapchain_extent; };
 
     private:
-        VkSwapchainKHR _vk_swapchain;
         std::shared_ptr<physical_device> _physical_device;
         std::shared_ptr<logical_device> _logical_device;
         std::shared_ptr<surface> _surface;

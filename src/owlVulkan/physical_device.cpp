@@ -14,7 +14,7 @@ namespace owl::vulkan
         : _instance(instance)
         , _surface(surface)
     {
-        std::vector<VkPhysicalDevice> devices = vulkan::helpers::get_physical_devices(_instance->get_vk_instance());
+        std::vector<VkPhysicalDevice> devices = vulkan::helpers::get_physical_devices(_instance->get_vk_handle());
 
         if (devices.size() == 0)
             throw std::runtime_error("No GPUs with Vulkan support found.");
@@ -23,28 +23,26 @@ namespace owl::vulkan
         {
             if (is_device_suitable(device, required_device_extensions))
             {
-                _vk_physical_device = device;
+                _vk_handle = device;
                 break;
             }
         }
 
-        if (_vk_physical_device == VK_NULL_HANDLE)
+        if (_vk_handle == VK_NULL_HANDLE)
             throw std::runtime_error("No suitable device found.");
     }
 
     physical_device::~physical_device() {}
 
-    bool physical_device::is_device_suitable(const VkPhysicalDevice& device,
-                                             const std::vector<const char*>& required_device_extensions)
+    bool physical_device::is_device_suitable(const VkPhysicalDevice& device, const std::vector<const char*>& required_device_extensions)
     {
-        vulkan::queue_families_indices indices = vulkan::find_queue_families(device, _surface->get_vk_surface());
+        vulkan::queue_families_indices indices = vulkan::find_queue_families(device, _surface->get_vk_handle());
         bool are_required_extensions_supported = check_device_extension_support(device, required_device_extensions);
 
         bool is_swapchain_suitable = false;
         if (are_required_extensions_supported)
         {
-            vulkan::swapchain_support swapchain_support =
-                vulkan::query_swapchain_support(device, _surface->get_vk_surface());
+            vulkan::swapchain_support swapchain_support = vulkan::query_swapchain_support(device, _surface->get_vk_handle());
             is_swapchain_suitable = !swapchain_support.formats.empty() && !swapchain_support.presentation_modes.empty();
         }
 
@@ -54,8 +52,7 @@ namespace owl::vulkan
     bool physical_device::check_device_extension_support(const VkPhysicalDevice& device,
                                                          const std::vector<const char*>& required_device_extensions)
     {
-        std::vector<VkExtensionProperties> available_extensions =
-            vulkan::helpers::get_device_extension_properties(device);
+        std::vector<VkExtensionProperties> available_extensions = vulkan::helpers::get_device_extension_properties(device);
         std::set<std::string> required_extensions(required_device_extensions.begin(), required_device_extensions.end());
 
         for (const auto& extension : available_extensions)

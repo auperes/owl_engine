@@ -14,9 +14,9 @@ namespace owl::vulkan
         pipeline_layout_info.pushConstantRangeCount = 0;
         pipeline_layout_info.pPushConstantRanges = nullptr;
 
-        auto result = vkCreatePipelineLayout(_logical_device->get_vk_device(), &pipeline_layout_info, nullptr, &_vk_pipeline_layout);
+        auto result = vkCreatePipelineLayout(_logical_device->get_vk_handle(), &pipeline_layout_info, nullptr, &_vk_handle);
         vulkan::helpers::handle_result(result, "Failed to create pipeline layout");
     }
 
-    pipeline_layout::~pipeline_layout() { vkDestroyPipelineLayout(_logical_device->get_vk_device(), _vk_pipeline_layout, nullptr); }
+    pipeline_layout::~pipeline_layout() { vkDestroyPipelineLayout(_logical_device->get_vk_handle(), _vk_handle, nullptr); }
 } // namespace owl::vulkan

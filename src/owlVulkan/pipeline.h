@@ -2,17 +2,16 @@
 
 #include <vulkan/vulkan.h>
 
+#include "vulkan_object.h"
+
 namespace owl::vulkan
 {
-    class pipeline
+    class pipeline : public vulkan_object<VkPipeline>
     {
     public:
         pipeline();
         ~pipeline();
 
-        const VkPipeline& get_vk_pipeline() const { return _vk_pipeline; }
-
     protected:
-        VkPipeline _vk_pipeline;
     };
 } // namespace owl::vulkan

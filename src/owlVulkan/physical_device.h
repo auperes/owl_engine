@@ -6,10 +6,11 @@
 
 #include "instance.h"
 #include "surface.h"
+#include "vulkan_object.h"
 
 namespace owl::vulkan
 {
-    class physical_device
+    class physical_device : public vulkan_object<VkPhysicalDevice>
     {
     public:
         physical_device(const std::shared_ptr<instance>& instance,
@@ -17,10 +18,7 @@ namespace owl::vulkan
                         const std::vector<const char*>& required_device_extensions);
         ~physical_device();
 
-        const VkPhysicalDevice& get_vk_physical_device() const { return _vk_physical_device; }
-
     private:
-        VkPhysicalDevice _vk_physical_device;
         std::shared_ptr<instance> _instance;
         std::shared_ptr<surface> _surface;
 

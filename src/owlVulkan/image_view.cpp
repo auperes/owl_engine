@@ -24,9 +24,9 @@ namespace owl::vulkan
         create_info.subresourceRange.baseArrayLayer = 0;
         create_info.subresourceRange.layerCount = 1;
 
-        auto result = vkCreateImageView(_logical_device->get_vk_device(), &create_info, nullptr, &_vk_image_view);
+        auto result = vkCreateImageView(_logical_device->get_vk_handle(), &create_info, nullptr, &_vk_handle);
         vulkan::helpers::handle_result(result, "Failed to create image view");
     }
 
-    image_view::~image_view() { vkDestroyImageView(_logical_device->get_vk_device(), _vk_image_view, nullptr); }
+    image_view::~image_view() { vkDestroyImageView(_logical_device->get_vk_handle(), _vk_handle, nullptr); }
 } // namespace owl::vulkan

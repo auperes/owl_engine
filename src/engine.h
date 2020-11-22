@@ -67,9 +67,12 @@ namespace owl
         std::vector<std::shared_ptr<vulkan::fence>> _in_flight_images;
 
         size_t _current_frame = 0;
+        bool _framebuffer_resized = false;
 
         void initialize();
         void initialize_window();
+        static void framebuffer_resize_callback(GLFWwindow* window, int width, int height);
+
         void initialize_vulkan();
 
         std::vector<const char*> get_required_extensions();

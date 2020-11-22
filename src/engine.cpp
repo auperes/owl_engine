@@ -33,9 +33,16 @@ namespace owl
         glfwInit();
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
         _window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+        glfwSetWindowUserPointer(_window, this);
+        glfwSetFramebufferSizeCallback(_window, framebuffer_resize_callback);
+    }
+
+    void engine::framebuffer_resize_callback(GLFWwindow* window, int width, int height)
+    {
+        auto application = reinterpret_cast<engine*>(glfwGetWindowUserPointer(window));
+        application->_framebuffer_resized = true;
     }
 
     void engine::initialize_vulkan()
@@ -156,6 +163,16 @@ namespace owl
 
     void engine::recreate_swapchain()
     {
+        int width = 0;
+        int height = 0;
+
+        glfwGetFramebufferSize(_window, &width, &height);
+        while (width == 0 || height == 0)
+        {
+            glfwGetFramebufferSize(_window, &width, &height);
+            glfwWaitEvents();
+        }
+
         _logical_device->wait_idle();
         clean_swapchain();
         create_swapchain();
@@ -188,12 +205,22 @@ namespace owl
         _in_flight_fences[_current_frame]->wait_for_fence();
 
         uint32_t image_index;
-        vkAcquireNextImageKHR(_logical_device->get_vk_handle(),
-                              _swapchain->get_vk_handle(),
-                              UINT64_MAX,
-                              _image_available_semaphores[_current_frame]->get_vk_handle(),
-                              VK_NULL_HANDLE,
-                              &image_index);
+        VkResult acquire_result = vkAcquireNextImageKHR(_logical_device->get_vk_handle(),
+                                                        _swapchain->get_vk_handle(),
+                                                        UINT64_MAX,
+                                                        _image_available_semaphores[_current_frame]->get_vk_handle(),
+                                                        VK_NULL_HANDLE,
+                                                        &image_index);
+
+        if (acquire_result == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            recreate_swapchain();
+            return;
+        }
+        else if (acquire_result != VK_SUCCESS && acquire_result != VK_SUBOPTIMAL_KHR)
+        {
+            vulkan::helpers::handle_result_error(acquire_result, "Failed to acquire swapchain image.");
+        }
 
         if (_in_flight_images[image_index] != nullptr)
             _in_flight_images[image_index]->wait_for_fence();
@@ -232,8 +259,18 @@ namespace owl
         presentation_info.pImageIndices = &image_index;
         presentation_info.pResults = nullptr;
 
-        vkQueuePresentKHR(_logical_device->get_vk_presentation_queue(), &presentation_info);
-        vkQueueWaitIdle(_logical_device->get_vk_presentation_queue());
+        VkResult presentation_result = vkQueuePresentKHR(_logical_device->get_vk_presentation_queue(), &presentation_info);
+
+        if (presentation_result == VK_ERROR_OUT_OF_DATE_KHR || presentation_result == VK_SUBOPTIMAL_KHR || _framebuffer_resized)
+        {
+            _framebuffer_resized = false;
+            recreate_swapchain();
+            return;
+        }
+        else if (presentation_result != VK_SUCCESS)
+        {
+            vulkan::helpers::handle_result_error(presentation_result, "Failed to acquire swapchain image.");
+        }
 
         _current_frame = (_current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
     }

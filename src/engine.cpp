@@ -1,13 +1,18 @@
 #include "engine.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstring>
 #include <iostream>
 #include <set>
 #include <stdexcept>
 
+#define GLM_FORCE_RADIANS
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <owlVulkan/helpers/vulkan_collections_helpers.h>
 #include <owlVulkan/helpers/vulkan_helpers.h>
+#include <owlVulkan/matrix.h>
 #include <owlVulkan/queue_families_indices.h>
 #include <owlVulkan/swapchain.h>
 
@@ -63,8 +68,19 @@ namespace owl
                                                                    device_extensions,
                                                                    validation_layers,
                                                                    enable_validation_layers);
-        _command_pool = std::make_shared<vulkan::command_pool>(_logical_device, _physical_device, _surface);
+
         create_swapchain();
+        create_image_views();
+        create_render_pass();
+        create_descriptor_set_layout();
+        create_graphics_pipeline();
+        create_framebuffers();
+        _command_pool = std::make_shared<vulkan::command_pool>(_logical_device, _physical_device, _surface);
+        create_buffers();
+        create_uniform_buffers();
+        create_descriptor_pool();
+        create_descriptor_sets();
+        create_command_buffers();
         create_synchronization_objects();
     }
 
@@ -99,29 +115,90 @@ namespace owl
         vulkan::helpers::handle_result(result, "Failed to create window surface");
     }
 
+    void engine::create_buffers()
+    {
+        _vertex_buffer = vulkan::create_buffer(vertices,
+                                               _physical_device,
+                                               _logical_device,
+                                               _command_pool,
+                                               VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+        _index_buffer = vulkan::create_buffer(indices,
+                                              _physical_device,
+                                              _logical_device,
+                                              _command_pool,
+                                              VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    }
+
+    void engine::create_uniform_buffers()
+    {
+        VkDeviceSize buffer_size = sizeof(vulkan::model_view_projection);
+        _uniform_buffers.resize(_swapchain->get_vk_swapchain_images().size());
+
+        for (size_t i = 0; i < _swapchain->get_vk_swapchain_images().size(); ++i)
+        {
+            _uniform_buffers[i] =
+                std::make_shared<vulkan::buffer>(_physical_device,
+                                                 _logical_device,
+                                                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                                 VK_SHARING_MODE_EXCLUSIVE,
+                                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                                 buffer_size);
+        }
+    }
+
     void engine::create_swapchain()
     {
         _swapchain = std::make_shared<vulkan::swapchain>(_physical_device, _logical_device, _surface, WIDTH, HEIGHT);
-        create_image_views();
+    }
 
+    void engine::create_descriptor_pool()
+    {
+        _descriptor_pool = std::make_shared<vulkan::descriptor_pool>(_logical_device, _swapchain->get_vk_swapchain_images().size());
+    }
+
+    void engine::create_render_pass()
+    {
         _render_pass = std::make_shared<vulkan::render_pass>(_logical_device, _swapchain->get_vk_swapchain_image_format());
+    }
 
-        _pipeline_layout = std::make_shared<vulkan::pipeline_layout>(_logical_device);
+    void engine::create_graphics_pipeline()
+    {
+        _pipeline_layout = std::make_shared<vulkan::pipeline_layout>(_logical_device, _descriptor_set_layout);
         _graphics_pipeline = std::make_shared<vulkan::graphics_pipeline>("../build/shaders/passthrough_frag.spv",
                                                                          "../build/shaders/passthrough_vert.spv",
                                                                          _logical_device,
                                                                          _swapchain,
                                                                          _pipeline_layout,
                                                                          _render_pass);
+    }
 
-        create_framebuffers();
-
+    void engine::create_command_buffers()
+    {
         _command_buffers = std::make_shared<vulkan::command_buffers>(_logical_device,
                                                                      _command_pool,
                                                                      _swapchain_framebuffers,
                                                                      _graphics_pipeline,
                                                                      _render_pass,
-                                                                     _swapchain);
+                                                                     _swapchain,
+                                                                     _vertex_buffer,
+                                                                     _index_buffer,
+                                                                     _descriptor_sets,
+                                                                     _pipeline_layout,
+                                                                     static_cast<uint32_t>(indices.size()));
+    }
+
+    void engine::create_descriptor_set_layout()
+    {
+        _descriptor_set_layout = std::make_shared<vulkan::descriptor_set_layout>(_logical_device);
+    }
+
+    void engine::create_descriptor_sets()
+    {
+        _descriptor_sets = std::make_shared<vulkan::descriptor_sets>(_logical_device,
+                                                                     _descriptor_set_layout,
+                                                                     _descriptor_pool,
+                                                                     _uniform_buffers,
+                                                                     _swapchain->get_vk_swapchain_images().size());
     }
 
     void engine::create_image_views()
@@ -175,7 +252,16 @@ namespace owl
 
         _logical_device->wait_idle();
         clean_swapchain();
+
         create_swapchain();
+        create_image_views();
+        create_render_pass();
+        create_graphics_pipeline();
+        create_framebuffers();
+        create_uniform_buffers();
+        create_descriptor_pool();
+        create_descriptor_sets();
+        create_command_buffers();
     }
 
     void engine::clean_swapchain()
@@ -187,6 +273,8 @@ namespace owl
         _render_pass = nullptr;
         _swapchain_image_views.clear();
         _swapchain = nullptr;
+        _uniform_buffers.clear();
+        _descriptor_pool = nullptr;
     }
 
     void engine::run_internal()
@@ -221,6 +309,8 @@ namespace owl
         {
             vulkan::helpers::handle_result_error(acquire_result, "Failed to acquire swapchain image.");
         }
+
+        update_uniform_buffers(image_index);
 
         if (_in_flight_images[image_index] != nullptr)
             _in_flight_images[image_index]->wait_for_fence();
@@ -275,9 +365,33 @@ namespace owl
         _current_frame = (_current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
+    void engine::update_uniform_buffers(uint32_t current_image)
+    {
+        static auto start_time = std::chrono::high_resolution_clock::now();
+        auto current_time = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
+
+        auto extent = _swapchain->get_vk_swapchain_extent();
+        vulkan::model_view_projection mvp;
+        mvp.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        mvp.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        mvp.projection = glm::perspective(glm::radians(45.0f), extent.width / (float)extent.height, 0.1f, 10.0f);
+        mvp.projection[1][1] *= -1; // in vulkan Y coordinate is inverted (compared to openGL)
+
+        void* data;
+        vkMapMemory(_logical_device->get_vk_handle(), _uniform_buffers[current_image]->get_vk_device_memory(), 0, sizeof(mvp), 0, &data);
+        memcpy(data, &mvp, sizeof(mvp));
+        vkUnmapMemory(_logical_device->get_vk_handle(), _uniform_buffers[current_image]->get_vk_device_memory());
+    }
+
     void engine::clean()
     {
         clean_swapchain();
+
+        _descriptor_set_layout = nullptr;
+
+        _index_buffer = nullptr;
+        _vertex_buffer = nullptr;
 
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
         {
@@ -293,7 +407,6 @@ namespace owl
         _instance = nullptr;
 
         glfwDestroyWindow(_window);
-
         glfwTerminate();
     }
 } // namespace owl

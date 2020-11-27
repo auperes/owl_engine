@@ -4,6 +4,7 @@
 
 #include <memory>
 
+#include "descriptor_set_layout.h"
 #include "logical_device.h"
 #include "vulkan_object.h"
 
@@ -12,7 +13,8 @@ namespace owl::vulkan
     class pipeline_layout : public vulkan_object<VkPipelineLayout>
     {
     public:
-        pipeline_layout(const std::shared_ptr<logical_device>& logical_device);
+        pipeline_layout(const std::shared_ptr<logical_device>& logical_device,
+                        const std::shared_ptr<descriptor_set_layout>& descriptor_set_layout);
         ~pipeline_layout();
 
     private:

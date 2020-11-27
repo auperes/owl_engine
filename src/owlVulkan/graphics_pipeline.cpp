@@ -2,6 +2,7 @@
 
 #include "helpers/vulkan_helpers.h"
 #include "shader_module.h"
+#include "vertex.h"
 
 namespace owl::vulkan
 {
@@ -21,7 +22,9 @@ namespace owl::vulkan
         auto vertex_create_info = create_shader_stage_info(fragment_shader_module.get_vk_handle(), VK_SHADER_STAGE_VERTEX_BIT);
         VkPipelineShaderStageCreateInfo shader_stages_infos[] = {vertex_create_info, fragment_create_info};
 
-        auto vertex_input_create_info = create_vertex_input_state_info();
+        VkVertexInputBindingDescription binding_description = get_binding_description();
+        std::array<VkVertexInputAttributeDescription, 2> attribute_descriptions = get_attribute_descriptions();
+        auto vertex_input_create_info = create_vertex_input_state_info(binding_description, attribute_descriptions);
         auto input_assembly_create_info = create_input_assembly_state_info();
 
         VkViewport viewport{};
@@ -94,14 +97,16 @@ namespace owl::vulkan
         return create_info;
     }
 
-    VkPipelineVertexInputStateCreateInfo graphics_pipeline::create_vertex_input_state_info()
+    VkPipelineVertexInputStateCreateInfo graphics_pipeline::create_vertex_input_state_info(
+        const VkVertexInputBindingDescription& binding_description,
+        const std::array<VkVertexInputAttributeDescription, 2>& attribute_descriptions)
     {
         VkPipelineVertexInputStateCreateInfo vertex_input_create_info{};
         vertex_input_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertex_input_create_info.vertexBindingDescriptionCount = 0;
-        vertex_input_create_info.pVertexBindingDescriptions = nullptr;
-        vertex_input_create_info.vertexAttributeDescriptionCount = 0;
-        vertex_input_create_info.pVertexAttributeDescriptions = nullptr;
+        vertex_input_create_info.vertexBindingDescriptionCount = 1;
+        vertex_input_create_info.pVertexBindingDescriptions = &binding_description;
+        vertex_input_create_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_descriptions.size());
+        vertex_input_create_info.pVertexAttributeDescriptions = attribute_descriptions.data();
 
         return vertex_input_create_info;
     }
@@ -125,7 +130,7 @@ namespace owl::vulkan
         rasterization_state_info.polygonMode = VK_POLYGON_MODE_FILL;
         rasterization_state_info.lineWidth = 1.0f;
         rasterization_state_info.cullMode = VK_CULL_MODE_BACK_BIT;
-        rasterization_state_info.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        rasterization_state_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterization_state_info.depthBiasEnable = VK_FALSE;
         rasterization_state_info.depthBiasConstantFactor = 0.0f;
         rasterization_state_info.depthBiasClamp = 0.0f;

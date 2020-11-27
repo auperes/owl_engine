@@ -9,7 +9,12 @@ namespace owl::vulkan
                                      const std::vector<std::shared_ptr<vulkan::framebuffer>>& swapchain_framebuffers,
                                      const std::shared_ptr<graphics_pipeline>& graphics_pipeline,
                                      const std::shared_ptr<render_pass>& render_pass,
-                                     const std::shared_ptr<swapchain>& swapchain)
+                                     const std::shared_ptr<swapchain>& swapchain,
+                                     const std::shared_ptr<buffer>& vertex_buffer,
+                                     const std::shared_ptr<buffer>& index_buffer,
+                                     const std::shared_ptr<descriptor_sets>& descriptor_sets,
+                                     const std::shared_ptr<pipeline_layout>& pipeline_layout,
+                                     const uint32_t indices_size)
         : _logical_device(logical_device)
         , _command_pool(command_pool)
     {
@@ -48,7 +53,22 @@ namespace owl::vulkan
             vkCmdBeginRenderPass(_vk_command_buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
             vkCmdBindPipeline(_vk_command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline->get_vk_handle());
-            vkCmdDraw(_vk_command_buffers[i], 3, 1, 0, 0);
+
+            VkBuffer vertex_buffers[] = {vertex_buffer->get_vk_handle()};
+            VkDeviceSize offsets[] = {0};
+
+            vkCmdBindVertexBuffers(_vk_command_buffers[i], 0, 1, vertex_buffers, offsets);
+            vkCmdBindIndexBuffer(_vk_command_buffers[i], index_buffer->get_vk_handle(), 0, VK_INDEX_TYPE_UINT16);
+            vkCmdBindDescriptorSets(_vk_command_buffers[i],
+                                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    pipeline_layout->get_vk_handle(),
+                                    0,
+                                    1,
+                                    &(descriptor_sets->get_vk_descriptor_sets()[i]),
+                                    0,
+                                    nullptr);
+
+            vkCmdDrawIndexed(_vk_command_buffers[i], indices_size, 1, 0, 0, 0);
 
             vkCmdEndRenderPass(_vk_command_buffers[i]);
 

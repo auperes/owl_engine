@@ -14,3 +14,4 @@ AllowAllArgumentsOnNextLine: false
 AllowShortFunctionsOnASingleLine: InlineOnly
 BreakConstructorInitializers : BeforeComma
 ColumnLimit: 140
+AlwaysBreakTemplateDeclarations: Yes

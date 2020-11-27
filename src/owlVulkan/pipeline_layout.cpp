@@ -4,13 +4,14 @@
 
 namespace owl::vulkan
 {
-    pipeline_layout::pipeline_layout(const std::shared_ptr<logical_device>& logical_device)
+    pipeline_layout::pipeline_layout(const std::shared_ptr<logical_device>& logical_device,
+                                     const std::shared_ptr<descriptor_set_layout>& descriptor_set_layout)
         : _logical_device(logical_device)
     {
         VkPipelineLayoutCreateInfo pipeline_layout_info{};
         pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipeline_layout_info.setLayoutCount = 0;
-        pipeline_layout_info.pSetLayouts = nullptr;
+        pipeline_layout_info.setLayoutCount = 1;
+        pipeline_layout_info.pSetLayouts = &descriptor_set_layout->get_vk_handle();
         pipeline_layout_info.pushConstantRangeCount = 0;
         pipeline_layout_info.pPushConstantRanges = nullptr;
 

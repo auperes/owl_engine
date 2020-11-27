@@ -6,9 +6,13 @@
 #include <memory>
 #include <vector>
 
+#include <buffer.h>
 #include <owlVulkan/command_buffers.h>
 #include <owlVulkan/command_pool.h>
 #include <owlVulkan/debug_messenger.h>
+#include <owlVulkan/descriptor_pool.h>
+#include <owlVulkan/descriptor_set_layout.h>
+#include <owlVulkan/descriptor_sets.h>
 #include <owlVulkan/fence.h>
 #include <owlVulkan/framebuffer.h>
 #include <owlVulkan/graphics_pipeline.h>
@@ -21,6 +25,7 @@
 #include <owlVulkan/semaphore.h>
 #include <owlVulkan/surface.h>
 #include <owlVulkan/swapchain.h>
+#include <owlVulkan/vertex.h>
 
 namespace owl
 {
@@ -37,6 +42,11 @@ namespace owl
         const int MAX_FRAMES_IN_FLIGHT = 2;
         const std::vector<const char*> validation_layers = {"VK_LAYER_KHRONOS_validation"};
         const std::vector<const char*> device_extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+        const std::vector<vulkan::vertex> vertices = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+                                                      {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+                                                      {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+                                                      {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+        const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
 
 #ifdef NDEBUG
         const bool enable_validation_layers = false;
@@ -59,6 +69,13 @@ namespace owl
         std::vector<std::shared_ptr<vulkan::framebuffer>> _swapchain_framebuffers;
         std::shared_ptr<vulkan::command_pool> _command_pool;
         std::shared_ptr<vulkan::command_buffers> _command_buffers;
+        std::shared_ptr<vulkan::descriptor_set_layout> _descriptor_set_layout;
+        std::shared_ptr<vulkan::descriptor_pool> _descriptor_pool;
+        std::shared_ptr<vulkan::descriptor_sets> _descriptor_sets;
+
+        std::shared_ptr<vulkan::buffer> _vertex_buffer;
+        std::shared_ptr<vulkan::buffer> _index_buffer;
+        std::vector<std::shared_ptr<vulkan::buffer>> _uniform_buffers;
 
         std::vector<std::shared_ptr<vulkan::semaphore>> _image_available_semaphores;
         std::vector<std::shared_ptr<vulkan::semaphore>> _render_finished_semaphores;
@@ -79,7 +96,15 @@ namespace owl
         void display_available_extensions();
 
         void create_surface();
+        void create_buffers();
+        void create_uniform_buffers();
         void create_swapchain();
+        void create_descriptor_pool();
+        void create_render_pass();
+        void create_graphics_pipeline();
+        void create_command_buffers();
+        void create_descriptor_set_layout();
+        void create_descriptor_sets();
         void create_image_views();
         void create_framebuffers();
         void create_synchronization_objects();
@@ -90,6 +115,8 @@ namespace owl
 
         void run_internal();
         void draw_frame();
+
+        void update_uniform_buffers(uint32_t current_image);
 
         void clean();
     };

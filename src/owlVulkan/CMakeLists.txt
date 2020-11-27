@@ -1,7 +1,12 @@
 set(HEADERS
+    buffer.h
     command_buffers.h
     command_pool.h
     debug_messenger.h
+    descriptor_pool.h
+    descriptor_set_layout.h
+    descriptor_sets.h
+    matrix.h
     fence.h
     framebuffer.h
     graphics_pipeline.h
@@ -21,12 +26,17 @@ set(HEADERS
     surface.h
     swapchain.h
     swapchain_support.h
+    vertex.h
     vulkan_object.h)
 
 set(SOURCES
+    buffer.cpp
     command_buffers.cpp
     command_pool.cpp
     debug_messenger.cpp
+    descriptor_pool.cpp
+    descriptor_set_layout.cpp
+    descriptor_sets.cpp
     fence.cpp
     framebuffer.cpp
     graphics_pipeline.cpp
@@ -45,13 +55,15 @@ set(SOURCES
     shader_module.cpp
     surface.cpp
     swapchain.cpp
-    swapchain_support.cpp)
+    swapchain_support.cpp
+    vertex.cpp)
 
 add_library(owlVulkan SHARED ${SOURCES} ${HEADERS})
 
 target_include_directories(
   owlVulkan
   PRIVATE ${VULKAN_PATH}/Include
+  PRIVATE ${GLM_INCLUDE}
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/helpers)
 

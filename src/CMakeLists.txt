@@ -20,6 +20,7 @@ set(GLFW_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/../third_parties/glfw-3.3.2.bin.WIN
 set(GLFW_LIB ${CMAKE_CURRENT_SOURCE_DIR}/../third_parties/glfw-3.3.2.bin.WIN64/lib-mingw-w64/libglfw3.a)
 set(GLM_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/../third_parties/glm-0.9.9.8)
 set(STB_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/../third_parties/stb)
+set(TINY_OBJ_LOADER_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/../third_parties/tinyobjloader)
 
 add_subdirectory(owlVulkan)
 add_subdirectory(owlGui)
@@ -37,6 +38,7 @@ target_include_directories(
   PRIVATE ${GLFW_INCLUDE}
   PRIVATE ${GLM_INCLUDE}
   PRIVATE ${STB_INCLUDE}
+  PRIVATE ${TINY_OBJ_LOADER_INCLUDE}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/owlVulkan)
 
 add_dependencies(OwlEngine owlVulkan)
@@ -64,6 +66,15 @@ add_custom_command(
     ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_CURRENT_SOURCE_DIR}/resources/textures
     ${CMAKE_CURRENT_BINARY_DIR}/resources/textures)
+
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/resources/models)
+add_custom_command(
+  TARGET OwlEngine
+  POST_BUILD
+  COMMAND
+    ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/resources/models
+    ${CMAKE_CURRENT_BINARY_DIR}/resources/models)
 
 #compile and coyp shaders in binary directory
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/shaders)

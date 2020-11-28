@@ -86,7 +86,7 @@ namespace owl::vulkan
         VkDeviceSize offsets[] = {0};
 
         vkCmdBindVertexBuffers(vk_command_buffer, 0, 1, vertex_buffers, offsets);
-        vkCmdBindIndexBuffer(vk_command_buffer, index_buffer->get_vk_handle(), 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(vk_command_buffer, index_buffer->get_vk_handle(), 0, VK_INDEX_TYPE_UINT32);
         vkCmdBindDescriptorSets(vk_command_buffer,
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 pipeline_layout->get_vk_handle(),

@@ -6,6 +6,7 @@
 #include <iostream>
 #include <set>
 #include <stdexcept>
+#include <unordered_map>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -13,6 +14,9 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h>
 
 #include <owlVulkan/helpers/vulkan_collections_helpers.h>
 #include <owlVulkan/helpers/vulkan_helpers.h>
@@ -84,6 +88,7 @@ namespace owl
         create_texture_image();
         create_texture_image_view();
         create_texture_sampler();
+        load_model();
         create_buffers();
         create_uniform_buffers();
         create_descriptor_pool();
@@ -123,14 +128,53 @@ namespace owl
         vulkan::helpers::handle_result(result, "Failed to create window surface");
     }
 
+    void engine::load_model()
+    {
+        tinyobj::attrib_t attributes;
+        std::vector<tinyobj::shape_t> shapes;
+        std::vector<tinyobj::material_t> materials;
+        std::string warnings;
+        std::string errors;
+
+        auto success = tinyobj::LoadObj(&attributes, &shapes, &materials, &warnings, &errors, model_path.c_str());
+        if (!success)
+        {
+            throw std::runtime_error(warnings + errors);
+        }
+
+        std::unordered_map<vulkan::vertex, uint32_t> unique_vertices{};
+
+        for (const auto& shape : shapes)
+        {
+            for (const auto& index : shape.mesh.indices)
+            {
+                vulkan::vertex vertex{};
+                vertex.position = {attributes.vertices[3 * index.vertex_index + 0],
+                                   attributes.vertices[3 * index.vertex_index + 1],
+                                   attributes.vertices[3 * index.vertex_index + 2]};
+                vertex.texture_coordinates = {attributes.texcoords[2 * index.texcoord_index + 0],
+                                              1.0f - attributes.texcoords[2 * index.texcoord_index + 1]};
+                vertex.color = {1.0f, 1.0f, 1.0f};
+
+                if (unique_vertices.count(vertex) == 0)
+                {
+                    unique_vertices[vertex] = static_cast<uint32_t>(_mesh.vertices.size());
+                    _mesh.vertices.push_back(vertex);
+                }
+
+                _mesh.indices.push_back(unique_vertices[vertex]);
+            }
+        }
+    }
+
     void engine::create_buffers()
     {
-        _vertex_buffer = vulkan::create_buffer(vertices,
+        _vertex_buffer = vulkan::create_buffer(_mesh.vertices,
                                                _physical_device,
                                                _logical_device,
                                                _command_pool,
                                                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-        _index_buffer = vulkan::create_buffer(indices,
+        _index_buffer = vulkan::create_buffer(_mesh.indices,
                                               _physical_device,
                                               _logical_device,
                                               _command_pool,
@@ -195,7 +239,7 @@ namespace owl
                                                   _index_buffer,
                                                   _descriptor_sets,
                                                   _pipeline_layout,
-                                                  static_cast<uint32_t>(indices.size()));
+                                                  static_cast<uint32_t>(_mesh.indices.size()));
         });
     }
 
@@ -259,13 +303,12 @@ namespace owl
         int texture_width;
         int texture_height;
         int texture_channels;
-        std::string filepath = "resources/textures/flower.png";
-        stbi_uc* pixels = stbi_load(filepath.c_str(), &texture_width, &texture_height, &texture_channels, STBI_rgb_alpha);
+        stbi_uc* pixels = stbi_load(texture_path.c_str(), &texture_width, &texture_height, &texture_channels, STBI_rgb_alpha);
         VkDeviceSize image_size = texture_width * texture_height * 4;
 
         if (!pixels)
         {
-            throw std::runtime_error("Failed to load texture image: " + filepath);
+            throw std::runtime_error("Failed to load texture image: " + texture_path);
         }
 
         auto staging_buffer = vulkan::create_staging_buffer(pixels, _physical_device, _logical_device, image_size);
@@ -450,7 +493,7 @@ namespace owl
 
         auto extent = _swapchain->get_vk_swapchain_extent();
         vulkan::model_view_projection mvp;
-        mvp.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        mvp.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         mvp.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         mvp.projection = glm::perspective(glm::radians(45.0f), extent.width / (float)extent.height, 0.1f, 10.0f);
         mvp.projection[1][1] *= -1; // in vulkan Y coordinate is inverted (compared to openGL)

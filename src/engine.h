@@ -21,6 +21,7 @@
 #include <owlVulkan/image_view.h>
 #include <owlVulkan/instance.h>
 #include <owlVulkan/logical_device.h>
+#include <owlVulkan/mesh.h>
 #include <owlVulkan/physical_device.h>
 #include <owlVulkan/pipeline_layout.h>
 #include <owlVulkan/render_pass.h>
@@ -42,22 +43,14 @@ namespace owl
     private:
         const uint32_t WIDTH = 800;
         const uint32_t HEIGHT = 600;
+
         const int MAX_FRAMES_IN_FLIGHT = 2;
+
         const std::vector<const char*> validation_layers = {"VK_LAYER_KHRONOS_validation"};
         const std::vector<const char*> device_extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-        const std::vector<vulkan::vertex> vertices = {{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-                                                      {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-                                                      {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-                                                      {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
 
-                                                      {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-                                                      {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-                                                      {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-                                                      {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}};
-        const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4};
-
-        const std::string model_path = "models/viking_room.obj";
-        const std::string texture_path = "textures/viking_room.png";
+        const std::string model_path = "resources/models/teapot.obj";
+        const std::string texture_path = "resources/textures/flower.png";
 
 #ifdef NDEBUG
         const bool enable_validation_layers = false;
@@ -84,6 +77,7 @@ namespace owl
         std::shared_ptr<vulkan::descriptor_pool> _descriptor_pool;
         std::shared_ptr<vulkan::descriptor_sets> _descriptor_sets;
 
+        vulkan::mesh _mesh;
         std::shared_ptr<vulkan::buffer> _vertex_buffer;
         std::shared_ptr<vulkan::buffer> _index_buffer;
         std::vector<std::shared_ptr<vulkan::buffer>> _uniform_buffers;
@@ -130,6 +124,7 @@ namespace owl
         void create_texture_image_view();
         void create_texture_sampler();
         void create_depth_resources();
+        void load_model();
 
         void recreate_swapchain();
 

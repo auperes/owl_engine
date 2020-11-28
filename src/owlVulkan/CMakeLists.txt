@@ -18,6 +18,7 @@ set(HEADERS
     image.h
     instance.h
     logical_device.h
+    mesh.h
     physical_device.h
     pipeline_layout.h
     pipeline.h

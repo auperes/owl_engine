@@ -8,7 +8,9 @@
 #include "buffer.h"
 #include "descriptor_pool.h"
 #include "descriptor_set_layout.h"
+#include "image_view.h"
 #include "logical_device.h"
+#include "sampler.h"
 
 namespace owl::vulkan
 {
@@ -19,6 +21,8 @@ namespace owl::vulkan
                         const std::shared_ptr<descriptor_set_layout>& layout,
                         const std::shared_ptr<descriptor_pool>& descriptor_pool,
                         const std::vector<std::shared_ptr<vulkan::buffer>>& uniform_buffers,
+                        const std::shared_ptr<image_view>& image_view,
+                        const std::shared_ptr<sampler>& sampler,
                         const uint32_t sets_count);
         ~descriptor_sets();
 

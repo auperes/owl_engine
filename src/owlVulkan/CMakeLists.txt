@@ -6,6 +6,7 @@ set(HEADERS
     descriptor_pool.h
     descriptor_set_layout.h
     descriptor_sets.h
+    device_memory.h
     matrix.h
     fence.h
     framebuffer.h
@@ -14,6 +15,7 @@ set(HEADERS
     helpers/vulkan_collections_helpers.h
     helpers/vulkan_helpers.h
     image_view.h
+    image.h
     instance.h
     logical_device.h
     physical_device.h
@@ -21,6 +23,7 @@ set(HEADERS
     pipeline.h
     queue_families_indices.h
     render_pass.h
+    sampler.h
     semaphore.h
     shader_module.h
     surface.h
@@ -37,6 +40,7 @@ set(SOURCES
     descriptor_pool.cpp
     descriptor_set_layout.cpp
     descriptor_sets.cpp
+    device_memory.cpp
     fence.cpp
     framebuffer.cpp
     graphics_pipeline.cpp
@@ -44,6 +48,7 @@ set(SOURCES
     helpers/vulkan_collections_helpers.cpp
     helpers/vulkan_helpers.cpp
     image_view.cpp
+    image.cpp
     instance.cpp
     logical_device.cpp
     physical_device.cpp
@@ -51,6 +56,7 @@ set(SOURCES
     pipeline.cpp
     queue_families_indices.cpp
     render_pass.cpp
+    sampler.cpp
     semaphore.cpp
     shader_module.cpp
     surface.cpp

@@ -1,5 +1,7 @@
 #include "descriptor_sets.h"
 
+#include <array>
+
 #include "matrix.h"
 #include "vulkan_helpers.h"
 
@@ -9,6 +11,8 @@ namespace owl::vulkan
                                      const std::shared_ptr<descriptor_set_layout>& layout,
                                      const std::shared_ptr<descriptor_pool>& descriptor_pool,
                                      const std::vector<std::shared_ptr<vulkan::buffer>>& uniform_buffers,
+                                     const std::shared_ptr<image_view>& image_view,
+                                     const std::shared_ptr<sampler>& sampler,
                                      const uint32_t sets_count)
     {
         std::vector<VkDescriptorSetLayout> layouts(sets_count, layout->get_vk_handle());
@@ -29,18 +33,40 @@ namespace owl::vulkan
             buffer_info.offset = 0;
             buffer_info.range = sizeof(model_view_projection);
 
-            VkWriteDescriptorSet descriptor_write{};
-            descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptor_write.dstSet = _vk_descriptor_sets[i];
-            descriptor_write.dstBinding = 0;
-            descriptor_write.dstArrayElement = 0;
-            descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptor_write.descriptorCount = 1;
-            descriptor_write.pBufferInfo = &buffer_info;
-            descriptor_write.pImageInfo = nullptr;
-            descriptor_write.pTexelBufferView = nullptr;
+            VkDescriptorImageInfo image_info{};
+            image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            image_info.imageView = image_view->get_vk_handle();
+            image_info.sampler = sampler->get_vk_handle();
 
-            vkUpdateDescriptorSets(logical_device->get_vk_handle(), 1, &descriptor_write, 0, nullptr);
+            VkWriteDescriptorSet buffer_descriptor_write{};
+            buffer_descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            buffer_descriptor_write.dstSet = _vk_descriptor_sets[i];
+            buffer_descriptor_write.dstBinding = 0;
+            buffer_descriptor_write.dstArrayElement = 0;
+            buffer_descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            buffer_descriptor_write.descriptorCount = 1;
+            buffer_descriptor_write.pBufferInfo = &buffer_info;
+            buffer_descriptor_write.pImageInfo = nullptr;
+            buffer_descriptor_write.pTexelBufferView = nullptr;
+
+            VkWriteDescriptorSet image_descriptor_write{};
+            image_descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            image_descriptor_write.dstSet = _vk_descriptor_sets[i];
+            image_descriptor_write.dstBinding = 1;
+            image_descriptor_write.dstArrayElement = 0;
+            image_descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            image_descriptor_write.descriptorCount = 1;
+            image_descriptor_write.pBufferInfo = nullptr;
+            image_descriptor_write.pImageInfo = &image_info;
+            image_descriptor_write.pTexelBufferView = nullptr;
+
+            std::array<VkWriteDescriptorSet, 2> descriptor_writes = {buffer_descriptor_write, image_descriptor_write};
+
+            vkUpdateDescriptorSets(logical_device->get_vk_handle(),
+                                   static_cast<uint32_t>(descriptor_writes.size()),
+                                   descriptor_writes.data(),
+                                   0,
+                                   nullptr);
         }
     }
 

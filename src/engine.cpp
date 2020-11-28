@@ -10,6 +10,9 @@
 #define GLM_FORCE_RADIANS
 #include <glm/gtc/matrix_transform.hpp>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 #include <owlVulkan/helpers/vulkan_collections_helpers.h>
 #include <owlVulkan/helpers/vulkan_helpers.h>
 #include <owlVulkan/matrix.h>
@@ -76,6 +79,9 @@ namespace owl
         create_graphics_pipeline();
         create_framebuffers();
         _command_pool = std::make_shared<vulkan::command_pool>(_logical_device, _physical_device, _surface);
+        create_texture_image();
+        create_texture_image_view();
+        create_texture_sampler();
         create_buffers();
         create_uniform_buffers();
         create_descriptor_pool();
@@ -174,17 +180,20 @@ namespace owl
 
     void engine::create_command_buffers()
     {
-        _command_buffers = std::make_shared<vulkan::command_buffers>(_logical_device,
-                                                                     _command_pool,
-                                                                     _swapchain_framebuffers,
-                                                                     _graphics_pipeline,
-                                                                     _render_pass,
-                                                                     _swapchain,
-                                                                     _vertex_buffer,
-                                                                     _index_buffer,
-                                                                     _descriptor_sets,
-                                                                     _pipeline_layout,
-                                                                     static_cast<uint32_t>(indices.size()));
+        _command_buffers = std::make_shared<vulkan::command_buffers>(_logical_device, _command_pool, _swapchain_framebuffers.size());
+        _command_buffers->process_command_buffers(0, [this](const VkCommandBuffer& vk_command_buffer, size_t index) {
+            vulkan::process_engine_command_buffer(vk_command_buffer,
+                                                  index,
+                                                  _swapchain_framebuffers,
+                                                  _graphics_pipeline,
+                                                  _render_pass,
+                                                  _swapchain,
+                                                  _vertex_buffer,
+                                                  _index_buffer,
+                                                  _descriptor_sets,
+                                                  _pipeline_layout,
+                                                  static_cast<uint32_t>(indices.size()));
+        });
     }
 
     void engine::create_descriptor_set_layout()
@@ -198,17 +207,18 @@ namespace owl
                                                                      _descriptor_set_layout,
                                                                      _descriptor_pool,
                                                                      _uniform_buffers,
+                                                                     _texture_image_view,
+                                                                     _texture_sampler,
                                                                      _swapchain->get_vk_swapchain_images().size());
     }
 
     void engine::create_image_views()
     {
         _swapchain_image_views.reserve(_swapchain->get_vk_swapchain_images().size());
-        for (size_t i = 0; i < _swapchain->get_vk_swapchain_images().size(); ++i)
+        for (const auto& image : _swapchain->get_vk_swapchain_images())
         {
-            // TODO
-            auto& image = _swapchain->get_vk_swapchain_images()[i];
-            _swapchain_image_views.push_back(std::make_shared<vulkan::image_view>(_logical_device, _swapchain, i));
+            _swapchain_image_views.push_back(
+                std::make_shared<vulkan::image_view>(_logical_device, image, _swapchain->get_vk_swapchain_image_format()));
         }
     }
 
@@ -237,6 +247,46 @@ namespace owl
             _in_flight_fences.push_back(std::make_shared<vulkan::fence>(_logical_device));
         }
     }
+
+    void engine::create_texture_image()
+    {
+        int texture_width;
+        int texture_height;
+        int texture_channels;
+        std::string filepath = "resources/textures/flower.png";
+        stbi_uc* pixels = stbi_load(filepath.c_str(), &texture_width, &texture_height, &texture_channels, STBI_rgb_alpha);
+        VkDeviceSize image_size = texture_width * texture_height * 4;
+
+        if (!pixels)
+        {
+            throw std::runtime_error("Failed to load texture image: " + filepath);
+        }
+
+        auto staging_buffer = vulkan::create_staging_buffer(pixels, _physical_device, _logical_device, image_size);
+
+        stbi_image_free(pixels); // TODO not safe if exception occurs
+
+        _texture_image = std::make_shared<vulkan::image>(_physical_device,
+                                                         _logical_device,
+                                                         static_cast<uint32_t>(texture_width),
+                                                         static_cast<uint32_t>(texture_height),
+                                                         VK_FORMAT_R8G8B8A8_SRGB,
+                                                         VK_IMAGE_TILING_OPTIMAL,
+                                                         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                                                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        _texture_image->transition_layout(_command_pool, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        _texture_image->copy_buffer(_command_pool, staging_buffer->get_vk_handle());
+        _texture_image->transition_layout(_command_pool, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    }
+
+    void engine::create_texture_image_view()
+    {
+        _texture_image_view =
+            std::make_shared<vulkan::image_view>(_logical_device, _texture_image->get_vk_handle(), _texture_image->get_format());
+    }
+
+    void engine::create_texture_sampler() { _texture_sampler = std::make_shared<vulkan::sampler>(_logical_device); }
 
     void engine::recreate_swapchain()
     {
@@ -378,16 +428,16 @@ namespace owl
         mvp.projection = glm::perspective(glm::radians(45.0f), extent.width / (float)extent.height, 0.1f, 10.0f);
         mvp.projection[1][1] *= -1; // in vulkan Y coordinate is inverted (compared to openGL)
 
-        void* data;
-        vkMapMemory(_logical_device->get_vk_handle(), _uniform_buffers[current_image]->get_vk_device_memory(), 0, sizeof(mvp), 0, &data);
-        memcpy(data, &mvp, sizeof(mvp));
-        vkUnmapMemory(_logical_device->get_vk_handle(), _uniform_buffers[current_image]->get_vk_device_memory());
+        vulkan::copy_memory(&mvp, _logical_device, *_uniform_buffers[current_image], sizeof(mvp));
     }
 
     void engine::clean()
     {
         clean_swapchain();
 
+        _texture_sampler = nullptr;
+        _texture_image_view = nullptr;
+        _texture_image = nullptr;
         _descriptor_set_layout = nullptr;
 
         _index_buffer = nullptr;

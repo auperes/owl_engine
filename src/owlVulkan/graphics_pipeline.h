@@ -28,7 +28,7 @@ namespace owl::vulkan
         VkPipelineShaderStageCreateInfo create_shader_stage_info(const VkShaderModule& shader_module, VkShaderStageFlagBits shader_stage);
         VkPipelineVertexInputStateCreateInfo create_vertex_input_state_info(
             const VkVertexInputBindingDescription& binding_description,
-            const std::array<VkVertexInputAttributeDescription, 2>& attribute_descriptions);
+            const std::array<VkVertexInputAttributeDescription, 3>& attribute_descriptions);
         VkPipelineInputAssemblyStateCreateInfo create_input_assembly_state_info();
         VkPipelineRasterizationStateCreateInfo create_rasterization_state_info();
         VkPipelineMultisampleStateCreateInfo create_multisample_state_info();

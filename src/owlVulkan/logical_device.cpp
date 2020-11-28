@@ -3,6 +3,7 @@
 #include <set>
 #include <vector>
 
+#include "command_buffers.h"
 #include "helpers/vulkan_helpers.h"
 #include "queue_families_indices.h"
 
@@ -33,6 +34,8 @@ namespace owl::vulkan
         }
 
         VkPhysicalDeviceFeatures device_features{};
+        device_features.samplerAnisotropy = VK_TRUE;
+
         VkDeviceCreateInfo create_info{};
         create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
         create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
@@ -59,5 +62,16 @@ namespace owl::vulkan
     logical_device::~logical_device() { vkDestroyDevice(_vk_handle, nullptr); }
 
     void logical_device::wait_idle() { vkDeviceWaitIdle(_vk_handle); }
+
+    void logical_device::submit_to_graphics_queue(const command_buffers& command_buffers)
+    {
+        VkSubmitInfo submit_info{};
+        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = command_buffers.get_vk_command_buffers().data();
+
+        vkQueueSubmit(_vk_graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vkQueueWaitIdle(_vk_graphics_queue);
+    }
 
 } // namespace owl::vulkan

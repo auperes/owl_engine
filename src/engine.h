@@ -16,12 +16,14 @@
 #include <owlVulkan/fence.h>
 #include <owlVulkan/framebuffer.h>
 #include <owlVulkan/graphics_pipeline.h>
+#include <owlVulkan/image.h>
 #include <owlVulkan/image_view.h>
 #include <owlVulkan/instance.h>
 #include <owlVulkan/logical_device.h>
 #include <owlVulkan/physical_device.h>
 #include <owlVulkan/pipeline_layout.h>
 #include <owlVulkan/render_pass.h>
+#include <owlVulkan/sampler.h>
 #include <owlVulkan/semaphore.h>
 #include <owlVulkan/surface.h>
 #include <owlVulkan/swapchain.h>
@@ -42,10 +44,10 @@ namespace owl
         const int MAX_FRAMES_IN_FLIGHT = 2;
         const std::vector<const char*> validation_layers = {"VK_LAYER_KHRONOS_validation"};
         const std::vector<const char*> device_extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-        const std::vector<vulkan::vertex> vertices = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-                                                      {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-                                                      {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-                                                      {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+        const std::vector<vulkan::vertex> vertices = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+                                                      {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+                                                      {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+                                                      {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}};
         const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
 
 #ifdef NDEBUG
@@ -83,6 +85,10 @@ namespace owl
         std::vector<std::shared_ptr<vulkan::fence>> _in_flight_fences;
         std::vector<std::shared_ptr<vulkan::fence>> _in_flight_images;
 
+        std::shared_ptr<vulkan::image> _texture_image;
+        std::shared_ptr<vulkan::image_view> _texture_image_view;
+        std::shared_ptr<vulkan::sampler> _texture_sampler;
+
         size_t _current_frame = 0;
         bool _framebuffer_resized = false;
 
@@ -108,6 +114,9 @@ namespace owl
         void create_image_views();
         void create_framebuffers();
         void create_synchronization_objects();
+        void create_texture_image();
+        void create_texture_image_view();
+        void create_texture_sampler();
 
         void recreate_swapchain();
 

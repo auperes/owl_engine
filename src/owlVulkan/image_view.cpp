@@ -4,16 +4,14 @@
 
 namespace owl::vulkan
 {
-    image_view::image_view(const std::shared_ptr<logical_device>& logical_device,
-                           const std::shared_ptr<swapchain>& swapchain,
-                           unsigned index)
+    image_view::image_view(const std::shared_ptr<logical_device>& logical_device, const VkImage& image, VkFormat format)
         : _logical_device(logical_device)
     {
         VkImageViewCreateInfo create_info{};
         create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        create_info.image = swapchain->get_vk_swapchain_images()[index];
+        create_info.image = image;
         create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        create_info.format = swapchain->get_vk_swapchain_image_format();
+        create_info.format = format;
         create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
         create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
         create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;

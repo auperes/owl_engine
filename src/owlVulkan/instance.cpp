@@ -32,11 +32,19 @@ namespace owl::vulkan
         create_info.enabledExtensionCount = static_cast<uint32_t>(required_extensions.size());
         create_info.ppEnabledExtensionNames = required_extensions.data();
 
-        VkDebugUtilsMessengerCreateInfoEXT debug_create_info{};
         if (enable_validation_layers)
         {
             create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
             create_info.ppEnabledLayerNames = validation_layers.data();
+
+            VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT};
+            VkValidationFeaturesEXT validation_features{};
+            validation_features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+            validation_features.enabledValidationFeatureCount = 1;
+            validation_features.pEnabledValidationFeatures = enables;
+
+            VkDebugUtilsMessengerCreateInfoEXT debug_create_info{};
+            debug_create_info.pNext = &validation_features;
 
             debug_messenger::configure_debug_create_info(debug_create_info);
             create_info.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debug_create_info;

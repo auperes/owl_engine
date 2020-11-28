@@ -46,7 +46,10 @@ namespace owl::vulkan
             is_swapchain_suitable = !swapchain_support.formats.empty() && !swapchain_support.presentation_modes.empty();
         }
 
-        return indices.is_complete() && are_required_extensions_supported && is_swapchain_suitable;
+        VkPhysicalDeviceFeatures supported_features{};
+        vkGetPhysicalDeviceFeatures(device, &supported_features);
+
+        return indices.is_complete() && are_required_extensions_supported && is_swapchain_suitable && supported_features.samplerAnisotropy;
     }
 
     bool physical_device::check_device_extension_support(const VkPhysicalDevice& device,

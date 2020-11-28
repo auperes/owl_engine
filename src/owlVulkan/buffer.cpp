@@ -1,5 +1,7 @@
 #include "buffer.h"
 
+#include "command_buffers.h"
+
 namespace owl::vulkan
 {
     buffer::buffer(const std::shared_ptr<physical_device>& physical_device,
@@ -23,72 +25,50 @@ namespace owl::vulkan
         VkMemoryRequirements memory_requirements;
         vkGetBufferMemoryRequirements(_logical_device->get_vk_handle(), _vk_handle, &memory_requirements);
 
-        VkMemoryAllocateInfo memory_allocate_info{};
-        memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        memory_allocate_info.allocationSize = memory_requirements.size;
-        memory_allocate_info.memoryTypeIndex = find_memory_type(physical_device, memory_requirements.memoryTypeBits, properties);
-
-        auto allocate_result = vkAllocateMemory(_logical_device->get_vk_handle(), &memory_allocate_info, nullptr, &_vk_device_memory);
-        helpers::handle_result(allocate_result, "Failed to allocated buffer memory.");
-
-        vkBindBufferMemory(_logical_device->get_vk_handle(), _vk_handle, _vk_device_memory, 0);
+        _device_memory = std::make_unique<device_memory>(physical_device, _logical_device, memory_requirements, properties);
+        vkBindBufferMemory(_logical_device->get_vk_handle(), _vk_handle, get_vk_device_memory(), 0);
     }
 
-    buffer::~buffer()
-    {
-        vkDestroyBuffer(_logical_device->get_vk_handle(), _vk_handle, nullptr);
-        vkFreeMemory(_logical_device->get_vk_handle(), _vk_device_memory, nullptr);
-    }
-
-    uint32_t buffer::find_memory_type(const std::shared_ptr<physical_device>& physical_device,
-                                      uint32_t type_filter,
-                                      VkMemoryPropertyFlags properties)
-    {
-        VkPhysicalDeviceMemoryProperties memory_properties;
-        vkGetPhysicalDeviceMemoryProperties(physical_device->get_vk_handle(), &memory_properties);
-
-        for (uint32_t i = 0; i < memory_properties.memoryTypeCount; ++i)
-        {
-            if ((type_filter & (1 << i)) && (memory_properties.memoryTypes[i].propertyFlags & properties) == properties)
-            {
-                return i;
-            }
-        }
-
-        throw std::runtime_error("Failed to find suitable memory type.");
-    }
+    buffer::~buffer() { vkDestroyBuffer(_logical_device->get_vk_handle(), _vk_handle, nullptr); }
 
     void buffer::copy_buffer(const VkBuffer& source_buffer, VkDeviceSize size, const std::shared_ptr<command_pool>& command_pool)
     {
-        VkCommandBufferAllocateInfo allocate_info{};
-        allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocate_info.commandPool = command_pool->get_vk_handle();
-        allocate_info.commandBufferCount = 1;
+        command_buffers command_buffers(_logical_device, command_pool, 1);
+        command_buffers.process_command_buffers(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+                                                [this, size, &source_buffer](const VkCommandBuffer& vk_command_buffer, size_t index) {
+                                                    VkBufferCopy copy_region{};
+                                                    copy_region.size = size;
+                                                    vkCmdCopyBuffer(vk_command_buffer, source_buffer, _vk_handle, 1, &copy_region);
+                                                });
 
-        VkCommandBuffer command_buffer;
-        vkAllocateCommandBuffers(_logical_device->get_vk_handle(), &allocate_info, &command_buffer);
+        _logical_device->submit_to_graphics_queue(command_buffers);
+    }
 
-        VkCommandBufferBeginInfo begin_info{};
-        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    void copy_memory(const void* values,
+                     const std::shared_ptr<logical_device> logical_device,
+                     const buffer& buffer,
+                     const VkDeviceSize buffer_size)
+    {
+        void* data;
+        vkMapMemory(logical_device->get_vk_handle(), buffer.get_vk_device_memory(), 0, buffer_size, 0, &data);
+        memcpy(data, values, (size_t)buffer_size);
+        vkUnmapMemory(logical_device->get_vk_handle(), buffer.get_vk_device_memory());
+    }
 
-        vkBeginCommandBuffer(command_buffer, &begin_info);
+    std::shared_ptr<buffer> create_staging_buffer(const void* values,
+                                                  const std::shared_ptr<physical_device> physical_device,
+                                                  const std::shared_ptr<logical_device> logical_device,
+                                                  const VkDeviceSize buffer_size)
+    {
+        auto staging_buffer = std::make_shared<buffer>(physical_device,
+                                                       logical_device,
+                                                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                                       VK_SHARING_MODE_EXCLUSIVE,
+                                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                                       buffer_size);
 
-        VkBufferCopy copy_region{};
-        copy_region.size = size;
-        vkCmdCopyBuffer(command_buffer, source_buffer, _vk_handle, 1, &copy_region);
+        copy_memory(values, logical_device, *staging_buffer, buffer_size);
 
-        vkEndCommandBuffer(command_buffer);
-
-        VkSubmitInfo submit_info{};
-        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &command_buffer;
-
-        vkQueueSubmit(_logical_device->get_vk_graphics_queue(), 1, &submit_info, VK_NULL_HANDLE);
-        vkQueueWaitIdle(_logical_device->get_vk_graphics_queue());
-
-        vkFreeCommandBuffers(_logical_device->get_vk_handle(), command_pool->get_vk_handle(), 1, &command_buffer);
+        return staging_buffer;
     }
 } // namespace owl::vulkan

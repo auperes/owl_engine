@@ -2,19 +2,16 @@
 
 #include <vulkan/vulkan.h>
 
-#include <memory>
-
 #include "logical_device.h"
-#include "swapchain.h"
 #include "vulkan_object.h"
 
 namespace owl::vulkan
 {
-    class image_view : public vulkan_object<VkImageView>
+    class sampler : public vulkan_object<VkSampler>
     {
     public:
-        image_view(const std::shared_ptr<logical_device>& logical_device, const VkImage& image, VkFormat format);
-        ~image_view();
+        sampler(const std::shared_ptr<logical_device>& logical_device);
+        ~sampler();
 
     private:
         std::shared_ptr<logical_device> _logical_device;

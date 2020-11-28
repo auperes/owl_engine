@@ -23,7 +23,7 @@ namespace owl::vulkan
         VkPipelineShaderStageCreateInfo shader_stages_infos[] = {vertex_create_info, fragment_create_info};
 
         VkVertexInputBindingDescription binding_description = get_binding_description();
-        std::array<VkVertexInputAttributeDescription, 2> attribute_descriptions = get_attribute_descriptions();
+        auto attribute_descriptions = get_attribute_descriptions();
         auto vertex_input_create_info = create_vertex_input_state_info(binding_description, attribute_descriptions);
         auto input_assembly_create_info = create_input_assembly_state_info();
 
@@ -99,7 +99,7 @@ namespace owl::vulkan
 
     VkPipelineVertexInputStateCreateInfo graphics_pipeline::create_vertex_input_state_info(
         const VkVertexInputBindingDescription& binding_description,
-        const std::array<VkVertexInputAttributeDescription, 2>& attribute_descriptions)
+        const std::array<VkVertexInputAttributeDescription, 3>& attribute_descriptions)
     {
         VkPipelineVertexInputStateCreateInfo vertex_input_create_info{};
         vertex_input_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

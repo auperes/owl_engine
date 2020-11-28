@@ -14,6 +14,7 @@ namespace owl::vulkan
     {
     public:
         framebuffer(const std::shared_ptr<vulkan::image_view>& image_view,
+                    const std::shared_ptr<vulkan::image_view>& depth_image_view,
                     const std::shared_ptr<render_pass>& render_pass,
                     const std::shared_ptr<swapchain>& swapchain,
                     const std::shared_ptr<logical_device>& logical_device);

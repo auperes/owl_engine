@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include <buffer.h>
@@ -44,11 +45,19 @@ namespace owl
         const int MAX_FRAMES_IN_FLIGHT = 2;
         const std::vector<const char*> validation_layers = {"VK_LAYER_KHRONOS_validation"};
         const std::vector<const char*> device_extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-        const std::vector<vulkan::vertex> vertices = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-                                                      {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-                                                      {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-                                                      {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}};
-        const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
+        const std::vector<vulkan::vertex> vertices = {{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+                                                      {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+                                                      {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+                                                      {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+                                                      {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+                                                      {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+                                                      {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+                                                      {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}};
+        const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4};
+
+        const std::string model_path = "models/viking_room.obj";
+        const std::string texture_path = "textures/viking_room.png";
 
 #ifdef NDEBUG
         const bool enable_validation_layers = false;
@@ -89,6 +98,9 @@ namespace owl
         std::shared_ptr<vulkan::image_view> _texture_image_view;
         std::shared_ptr<vulkan::sampler> _texture_sampler;
 
+        std::shared_ptr<vulkan::image> _depth_image;
+        std::shared_ptr<vulkan::image_view> _depth_image_view;
+
         size_t _current_frame = 0;
         bool _framebuffer_resized = false;
 
@@ -117,6 +129,7 @@ namespace owl
         void create_texture_image();
         void create_texture_image_view();
         void create_texture_sampler();
+        void create_depth_resources();
 
         void recreate_swapchain();
 

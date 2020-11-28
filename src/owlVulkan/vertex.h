@@ -11,7 +11,7 @@ namespace owl::vulkan
 {
     struct vertex
     {
-        glm::vec2 position;
+        glm::vec3 position;
         glm::vec3 color;
         glm::vec2 texture_coordinates;
     };

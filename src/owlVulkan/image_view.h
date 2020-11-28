@@ -13,7 +13,10 @@ namespace owl::vulkan
     class image_view : public vulkan_object<VkImageView>
     {
     public:
-        image_view(const std::shared_ptr<logical_device>& logical_device, const VkImage& image, VkFormat format);
+        image_view(const std::shared_ptr<logical_device>& logical_device,
+                   const VkImage& image,
+                   VkFormat format,
+                   VkImageAspectFlags aspect_flags);
         ~image_view();
 
     private:

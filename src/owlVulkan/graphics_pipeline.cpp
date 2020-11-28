@@ -38,6 +38,7 @@ namespace owl::vulkan
         VkRect2D scissor{};
         scissor.offset = {0, 0};
         scissor.extent = swapchain->get_vk_swapchain_extent();
+
         VkPipelineViewportStateCreateInfo viewport_state_create_info{};
         viewport_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
         viewport_state_create_info.viewportCount = 1;
@@ -60,6 +61,8 @@ namespace owl::vulkan
         color_blend_attachment.alphaBlendOp = VK_BLEND_OP_ADD;
         auto color_blend_state_info = create_color_blend_attachment_state_info(color_blend_attachment);
 
+        auto depth_stencil_info = create_depth_stencil_state_info();
+
         VkGraphicsPipelineCreateInfo graphics_pipeline_info{};
         graphics_pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         graphics_pipeline_info.stageCount = 2;
@@ -69,7 +72,7 @@ namespace owl::vulkan
         graphics_pipeline_info.pViewportState = &viewport_state_create_info;
         graphics_pipeline_info.pRasterizationState = &rasterization_state_info;
         graphics_pipeline_info.pMultisampleState = &multisample_state_info;
-        graphics_pipeline_info.pDepthStencilState = nullptr;
+        graphics_pipeline_info.pDepthStencilState = &depth_stencil_info;
         graphics_pipeline_info.pColorBlendState = &color_blend_state_info;
         graphics_pipeline_info.pDynamicState = nullptr;
         graphics_pipeline_info.layout = pipeline_layout->get_vk_handle();
@@ -168,5 +171,22 @@ namespace owl::vulkan
         color_blend_attachment_state_info.blendConstants[3] = 0.0f;
 
         return color_blend_attachment_state_info;
+    }
+
+    VkPipelineDepthStencilStateCreateInfo graphics_pipeline::create_depth_stencil_state_info()
+    {
+        VkPipelineDepthStencilStateCreateInfo depth_stencil_info{};
+        depth_stencil_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+        depth_stencil_info.depthTestEnable = VK_TRUE;
+        depth_stencil_info.depthWriteEnable = VK_TRUE;
+        depth_stencil_info.depthCompareOp = VK_COMPARE_OP_LESS;
+        depth_stencil_info.depthBoundsTestEnable = VK_FALSE;
+        depth_stencil_info.minDepthBounds = 0.0f;
+        depth_stencil_info.maxDepthBounds = 1.0f;
+        depth_stencil_info.stencilTestEnable = VK_FALSE;
+        depth_stencil_info.front = {};
+        depth_stencil_info.back = {};
+
+        return depth_stencil_info;
     }
 } // namespace owl::vulkan

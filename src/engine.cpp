@@ -8,6 +8,7 @@
 #include <stdexcept>
 
 #define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/gtc/matrix_transform.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -77,6 +78,7 @@ namespace owl
         create_render_pass();
         create_descriptor_set_layout();
         create_graphics_pipeline();
+        create_depth_resources();
         create_framebuffers();
         _command_pool = std::make_shared<vulkan::command_pool>(_logical_device, _physical_device, _surface);
         create_texture_image();
@@ -164,7 +166,8 @@ namespace owl
 
     void engine::create_render_pass()
     {
-        _render_pass = std::make_shared<vulkan::render_pass>(_logical_device, _swapchain->get_vk_swapchain_image_format());
+        _render_pass =
+            std::make_shared<vulkan::render_pass>(_physical_device, _logical_device, _swapchain->get_vk_swapchain_image_format());
     }
 
     void engine::create_graphics_pipeline()
@@ -217,8 +220,10 @@ namespace owl
         _swapchain_image_views.reserve(_swapchain->get_vk_swapchain_images().size());
         for (const auto& image : _swapchain->get_vk_swapchain_images())
         {
-            _swapchain_image_views.push_back(
-                std::make_shared<vulkan::image_view>(_logical_device, image, _swapchain->get_vk_swapchain_image_format()));
+            _swapchain_image_views.push_back(std::make_shared<vulkan::image_view>(_logical_device,
+                                                                                  image,
+                                                                                  _swapchain->get_vk_swapchain_image_format(),
+                                                                                  VK_IMAGE_ASPECT_COLOR_BIT));
         }
     }
 
@@ -227,7 +232,8 @@ namespace owl
         _swapchain_framebuffers.reserve(_swapchain_image_views.size());
         for (const auto& image_view : _swapchain_image_views)
         {
-            _swapchain_framebuffers.push_back(std::make_shared<vulkan::framebuffer>(image_view, _render_pass, _swapchain, _logical_device));
+            _swapchain_framebuffers.push_back(
+                std::make_shared<vulkan::framebuffer>(image_view, _depth_image_view, _render_pass, _swapchain, _logical_device));
         }
     }
 
@@ -282,11 +288,29 @@ namespace owl
 
     void engine::create_texture_image_view()
     {
-        _texture_image_view =
-            std::make_shared<vulkan::image_view>(_logical_device, _texture_image->get_vk_handle(), _texture_image->get_format());
+        _texture_image_view = std::make_shared<vulkan::image_view>(_logical_device,
+                                                                   _texture_image->get_vk_handle(),
+                                                                   _texture_image->get_format(),
+                                                                   VK_IMAGE_ASPECT_COLOR_BIT);
     }
 
     void engine::create_texture_sampler() { _texture_sampler = std::make_shared<vulkan::sampler>(_logical_device); }
+
+    void engine::create_depth_resources()
+    {
+        VkFormat depth_format = vulkan::helpers::find_depth_format(_physical_device);
+        _depth_image = std::make_shared<vulkan::image>(_physical_device,
+                                                       _logical_device,
+                                                       _swapchain->get_vk_swapchain_extent().width,
+                                                       _swapchain->get_vk_swapchain_extent().height,
+                                                       depth_format,
+                                                       VK_IMAGE_TILING_OPTIMAL,
+                                                       VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        _depth_image_view =
+            std::make_shared<vulkan::image_view>(_logical_device, _depth_image->get_vk_handle(), depth_format, VK_IMAGE_ASPECT_DEPTH_BIT);
+    }
 
     void engine::recreate_swapchain()
     {
@@ -307,6 +331,7 @@ namespace owl
         create_image_views();
         create_render_pass();
         create_graphics_pipeline();
+        create_depth_resources();
         create_framebuffers();
         create_uniform_buffers();
         create_descriptor_pool();
@@ -316,6 +341,8 @@ namespace owl
 
     void engine::clean_swapchain()
     {
+        _depth_image_view = nullptr;
+        _depth_image = nullptr;
         _swapchain_framebuffers.clear();
         _command_buffers = nullptr;
         _graphics_pipeline = nullptr;

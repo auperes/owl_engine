@@ -34,5 +34,6 @@ namespace owl::vulkan
         VkPipelineMultisampleStateCreateInfo create_multisample_state_info();
         VkPipelineColorBlendStateCreateInfo create_color_blend_attachment_state_info(
             const VkPipelineColorBlendAttachmentState& color_blend_attachment);
+        VkPipelineDepthStencilStateCreateInfo create_depth_stencil_state_info();
     };
 } // namespace owl::vulkan

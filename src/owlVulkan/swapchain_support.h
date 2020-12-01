@@ -12,6 +12,4 @@ namespace owl::vulkan
         std::vector<VkSurfaceFormatKHR> formats;
         std::vector<VkPresentModeKHR> presentation_modes;
     };
-
-    swapchain_support query_swapchain_support(const VkPhysicalDevice& device, const VkSurfaceKHR& surface);
 }

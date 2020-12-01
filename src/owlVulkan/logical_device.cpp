@@ -15,7 +15,7 @@ namespace owl::vulkan
                                    const std::vector<const char*>& validation_layers,
                                    bool enable_validation_layers)
     {
-        vulkan::queue_families_indices indices = vulkan::find_queue_families(physical_device->get_vk_handle(), surface->get_vk_handle());
+        vulkan::queue_families_indices indices = physical_device->find_queue_families();
 
         std::set<uint32_t> unique_queue_families{indices.graphics_family.value(), indices.presentation_family.value()};
         std::vector<VkDeviceQueueCreateInfo> queue_create_infos;

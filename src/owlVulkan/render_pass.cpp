@@ -6,9 +6,9 @@
 
 namespace owl::vulkan
 {
-    render_pass::render_pass(const std::shared_ptr<physical_device>& physical_device,
-                             const std::shared_ptr<logical_device>& logical_device,
-                             const VkFormat& color_format)
+    render_pass::render_pass(const std::shared_ptr<logical_device>& logical_device,
+                             const VkFormat color_format,
+                             const VkFormat depth_format)
         : _logical_device(logical_device)
     {
         VkAttachmentDescription color_attachment{};
@@ -22,7 +22,7 @@ namespace owl::vulkan
         color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
         VkAttachmentDescription depth_attachment{};
-        depth_attachment.format = helpers::find_depth_format(physical_device);
+        depth_attachment.format = depth_format;
         depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
         depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;

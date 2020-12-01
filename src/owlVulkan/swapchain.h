@@ -40,9 +40,10 @@ namespace owl::vulkan
         VkPresentModeKHR choose_presentation_mode(const std::vector<VkPresentModeKHR>& available_presentation_modes);
         VkExtent2D choose_extent(const VkSurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height);
 
-        VkSwapchainCreateInfoKHR create_swapchain_info(const VkPhysicalDevice& physical_device,
+        VkSwapchainCreateInfoKHR create_swapchain_info(const std::shared_ptr<physical_device>& physical_device,
                                                        const VkSurfaceKHR& surface,
                                                        uint32_t width,
                                                        uint32_t height);
+        std::vector<VkImage> get_swapchain_images();
     };
 } // namespace owl::vulkan

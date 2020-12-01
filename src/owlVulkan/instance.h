@@ -17,6 +17,8 @@ namespace owl::vulkan
 
         ~instance();
 
+        std::vector<VkPhysicalDevice> get_physical_devices();
+
     private:
         bool check_validation_layer_support(const std::vector<const char*>& validation_layers);
     };

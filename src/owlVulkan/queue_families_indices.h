@@ -13,7 +13,4 @@ namespace owl::vulkan
 
         bool is_complete();
     };
-
-    queue_families_indices find_queue_families(const VkPhysicalDevice& device,
-                                               const VkSurfaceKHR& surface);
-}
+} // namespace owl::vulkan

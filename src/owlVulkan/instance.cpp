@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <functional>
 #include <iostream>
 #include <stdexcept>
 
@@ -80,5 +81,13 @@ namespace owl::vulkan
         }
 
         return all_layers_found;
+    }
+
+    std::vector<VkPhysicalDevice> instance::get_physical_devices()
+    {
+        auto enumeratePhysicalDevices = vkEnumeratePhysicalDevices;
+        auto function = std::bind(enumeratePhysicalDevices, _vk_handle, std::placeholders::_1, std::placeholders::_2);
+
+        return helpers::getElements<VkPhysicalDevice>(function);
     }
 } // namespace owl::vulkan

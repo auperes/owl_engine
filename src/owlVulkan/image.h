@@ -30,7 +30,7 @@ namespace owl::vulkan
 
         void transition_layout(const std::shared_ptr<command_pool>& command_pool, VkImageLayout new_layout);
         void copy_buffer(const std::shared_ptr<command_pool>& command_pool, const VkBuffer& source_buffer);
-        void generate_mipmaps(const std::shared_ptr<physical_device>& physical_device, const std::shared_ptr<command_pool>& command_pool);
+        void generate_mipmaps(const std::shared_ptr<command_pool>& command_pool);
 
     private:
         std::shared_ptr<logical_device> _logical_device;

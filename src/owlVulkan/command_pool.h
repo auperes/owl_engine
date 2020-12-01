@@ -3,7 +3,6 @@
 #include <vulkan/vulkan.h>
 
 #include "logical_device.h"
-#include "physical_device.h"
 #include "surface.h"
 #include "vulkan_object.h"
 
@@ -13,8 +12,8 @@ namespace owl::vulkan
     {
     public:
         command_pool(const std::shared_ptr<logical_device>& logical_device,
-                     const std::shared_ptr<physical_device>& physical_device,
-                     const std::shared_ptr<surface>& surface);
+                     const std::shared_ptr<surface>& surface,
+                     uint32_t graphics_queue_family_index);
         ~command_pool();
 
     private:

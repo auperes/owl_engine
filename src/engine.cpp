@@ -84,7 +84,9 @@ namespace owl
         create_graphics_pipeline();
         create_depth_resources();
         create_framebuffers();
-        _command_pool = std::make_shared<vulkan::command_pool>(_logical_device, _physical_device, _surface);
+
+        vulkan::queue_families_indices indices = _physical_device->find_queue_families();
+        _command_pool = std::make_shared<vulkan::command_pool>(_logical_device, _surface, indices.graphics_family.value());
         create_texture_image();
         create_texture_image_view();
         create_texture_sampler();
@@ -210,8 +212,10 @@ namespace owl
 
     void engine::create_render_pass()
     {
-        _render_pass =
-            std::make_shared<vulkan::render_pass>(_physical_device, _logical_device, _swapchain->get_vk_swapchain_image_format());
+        auto depth_format = _physical_device->get_depth_format();
+        auto color_format = _swapchain->get_vk_swapchain_image_format();
+
+        _render_pass = std::make_shared<vulkan::render_pass>(_logical_device, color_format, depth_format);
     }
 
     void engine::create_graphics_pipeline()
@@ -330,8 +334,9 @@ namespace owl
 
         _texture_image->transition_layout(_command_pool, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         _texture_image->copy_buffer(_command_pool, staging_buffer->get_vk_handle());
-        // _texture_image->transition_layout(_command_pool, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        _texture_image->generate_mipmaps(_physical_device, _command_pool);
+
+        if (_physical_device->supports_linear_filtering(_texture_image->get_format()))
+            _texture_image->generate_mipmaps(_command_pool);
     }
 
     void engine::create_texture_image_view()
@@ -347,7 +352,7 @@ namespace owl
 
     void engine::create_depth_resources()
     {
-        VkFormat depth_format = vulkan::helpers::find_depth_format(_physical_device);
+        VkFormat depth_format = _physical_device->get_depth_format();
         _depth_image = std::make_shared<vulkan::image>(_physical_device,
                                                        _logical_device,
                                                        _swapchain->get_vk_swapchain_extent().width,

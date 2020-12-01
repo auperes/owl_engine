@@ -129,16 +129,8 @@ namespace owl::vulkan
         vkCmdCopyBufferToImage(vk_command_buffer, source_buffer, _vk_handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
     }
 
-    void image::generate_mipmaps(const std::shared_ptr<physical_device>& physical_device, const std::shared_ptr<command_pool>& command_pool)
+    void image::generate_mipmaps(const std::shared_ptr<command_pool>& command_pool)
     {
-        VkFormatProperties format_properties; // TODO move this check in physical_device
-        vkGetPhysicalDeviceFormatProperties(physical_device->get_vk_handle(), _format, &format_properties);
-
-        if (!(format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
-        {
-            throw std::runtime_error("Texture image format does not support linear blitting");
-        }
-
         command_buffers command_buffers(_logical_device, command_pool, 1);
         command_buffers.process_command_buffers(
             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,

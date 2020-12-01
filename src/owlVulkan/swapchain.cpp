@@ -1,6 +1,7 @@
 #include "swapchain.h"
 
 #include <algorithm>
+#include <functional>
 
 #include "helpers/vulkan_helpers.h"
 #include "queue_families_indices.h"
@@ -18,13 +19,12 @@ namespace owl::vulkan
         , _logical_device(logical_device)
         , _surface(surface)
     {
-        VkSwapchainCreateInfoKHR create_info =
-            create_swapchain_info(_physical_device->get_vk_handle(), _surface->get_vk_handle(), width, height);
+        VkSwapchainCreateInfoKHR create_info = create_swapchain_info(_physical_device, _surface->get_vk_handle(), width, height);
 
         auto result = vkCreateSwapchainKHR(_logical_device->get_vk_handle(), &create_info, nullptr, &_vk_handle);
         vulkan::helpers::handle_result(result, "Failed to create swap chain");
 
-        _vk_swapchain_images = vulkan::helpers::get_swapchain_images(_logical_device->get_vk_handle(), _vk_handle);
+        _vk_swapchain_images = get_swapchain_images();
         _vk_swapchain_image_format = create_info.imageFormat;
         _vk_swapchain_extent = create_info.imageExtent;
     }
@@ -68,12 +68,12 @@ namespace owl::vulkan
         }
     }
 
-    VkSwapchainCreateInfoKHR swapchain::create_swapchain_info(const VkPhysicalDevice& physical_device,
+    VkSwapchainCreateInfoKHR swapchain::create_swapchain_info(const std::shared_ptr<physical_device>& physical_device,
                                                               const VkSurfaceKHR& surface,
                                                               uint32_t width,
                                                               uint32_t height)
     {
-        swapchain_support swapchain_support = query_swapchain_support(physical_device, surface);
+        swapchain_support swapchain_support = physical_device->query_swapchain_support();
         VkSurfaceFormatKHR surface_format = choose_surface_format(swapchain_support.formats);
         VkPresentModeKHR presentation_mode = choose_presentation_mode(swapchain_support.presentation_modes);
         VkExtent2D extent = choose_extent(swapchain_support.capabilities, width, height);
@@ -95,7 +95,7 @@ namespace owl::vulkan
         create_info.imageArrayLayers = 1;
         create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-        queue_families_indices indices = owl::vulkan::find_queue_families(physical_device, surface);
+        queue_families_indices indices = _physical_device->find_queue_families();
         uint32_t queue_families_indices[] = {indices.graphics_family.value(), indices.presentation_family.value()};
 
         if (indices.graphics_family != indices.presentation_family)
@@ -118,5 +118,14 @@ namespace owl::vulkan
         create_info.oldSwapchain = VK_NULL_HANDLE;
 
         return create_info;
+    }
+
+    std::vector<VkImage> swapchain::get_swapchain_images()
+    {
+        auto enumerateSwapchainImages = vkGetSwapchainImagesKHR;
+        auto function =
+            std::bind(enumerateSwapchainImages, _logical_device->get_vk_handle(), _vk_handle, std::placeholders::_1, std::placeholders::_2);
+
+        return helpers::getElements<VkImage>(function);
     }
 } // namespace owl::vulkan

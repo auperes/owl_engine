@@ -10,7 +10,7 @@ namespace owl::vulkan
     class sampler : public vulkan_object<VkSampler>
     {
     public:
-        sampler(const std::shared_ptr<logical_device>& logical_device);
+        sampler(const std::shared_ptr<logical_device>& logical_device, uint32_t mip_levels);
         ~sampler();
 
     private:

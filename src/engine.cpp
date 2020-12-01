@@ -266,6 +266,7 @@ namespace owl
         {
             _swapchain_image_views.push_back(std::make_shared<vulkan::image_view>(_logical_device,
                                                                                   image,
+                                                                                  1,
                                                                                   _swapchain->get_vk_swapchain_image_format(),
                                                                                   VK_IMAGE_ASPECT_COLOR_BIT));
         }
@@ -304,6 +305,7 @@ namespace owl
         int texture_height;
         int texture_channels;
         stbi_uc* pixels = stbi_load(texture_path.c_str(), &texture_width, &texture_height, &texture_channels, STBI_rgb_alpha);
+        _mip_levels = static_cast<uint32_t>(std::floor(std::log2(std::max(texture_width, texture_height))));
         VkDeviceSize image_size = texture_width * texture_height * 4;
 
         if (!pixels)
@@ -315,29 +317,33 @@ namespace owl
 
         stbi_image_free(pixels); // TODO not safe if exception occurs
 
-        _texture_image = std::make_shared<vulkan::image>(_physical_device,
-                                                         _logical_device,
-                                                         static_cast<uint32_t>(texture_width),
-                                                         static_cast<uint32_t>(texture_height),
-                                                         VK_FORMAT_R8G8B8A8_SRGB,
-                                                         VK_IMAGE_TILING_OPTIMAL,
-                                                         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                                                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        _texture_image =
+            std::make_shared<vulkan::image>(_physical_device,
+                                            _logical_device,
+                                            static_cast<uint32_t>(texture_width),
+                                            static_cast<uint32_t>(texture_height),
+                                            _mip_levels,
+                                            VK_FORMAT_R8G8B8A8_SRGB,
+                                            VK_IMAGE_TILING_OPTIMAL,
+                                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         _texture_image->transition_layout(_command_pool, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         _texture_image->copy_buffer(_command_pool, staging_buffer->get_vk_handle());
-        _texture_image->transition_layout(_command_pool, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        // _texture_image->transition_layout(_command_pool, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        _texture_image->generate_mipmaps(_physical_device, _command_pool);
     }
 
     void engine::create_texture_image_view()
     {
         _texture_image_view = std::make_shared<vulkan::image_view>(_logical_device,
                                                                    _texture_image->get_vk_handle(),
+                                                                   _mip_levels,
                                                                    _texture_image->get_format(),
                                                                    VK_IMAGE_ASPECT_COLOR_BIT);
     }
 
-    void engine::create_texture_sampler() { _texture_sampler = std::make_shared<vulkan::sampler>(_logical_device); }
+    void engine::create_texture_sampler() { _texture_sampler = std::make_shared<vulkan::sampler>(_logical_device, _mip_levels); }
 
     void engine::create_depth_resources()
     {
@@ -346,13 +352,17 @@ namespace owl
                                                        _logical_device,
                                                        _swapchain->get_vk_swapchain_extent().width,
                                                        _swapchain->get_vk_swapchain_extent().height,
+                                                       1,
                                                        depth_format,
                                                        VK_IMAGE_TILING_OPTIMAL,
                                                        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                                                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        _depth_image_view =
-            std::make_shared<vulkan::image_view>(_logical_device, _depth_image->get_vk_handle(), depth_format, VK_IMAGE_ASPECT_DEPTH_BIT);
+        _depth_image_view = std::make_shared<vulkan::image_view>(_logical_device,
+                                                                 _depth_image->get_vk_handle(),
+                                                                 1,
+                                                                 depth_format,
+                                                                 VK_IMAGE_ASPECT_DEPTH_BIT);
     }
 
     void engine::recreate_swapchain()

@@ -49,8 +49,11 @@ namespace owl
         const std::vector<const char*> validation_layers = {"VK_LAYER_KHRONOS_validation"};
         const std::vector<const char*> device_extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
-        const std::string model_path = "resources/models/teapot.obj";
-        const std::string texture_path = "resources/textures/flower.png";
+        const std::string model_path = "resources/models/viking_room.obj";
+        const std::string texture_path = "resources/textures/viking_room.png";
+
+        // const std::string model_path = "resources/models/teapot.obj";
+        // const std::string texture_path = "resources/textures/flower.png";
 
 #ifdef NDEBUG
         const bool enable_validation_layers = false;
@@ -94,6 +97,8 @@ namespace owl
 
         std::shared_ptr<vulkan::image> _depth_image;
         std::shared_ptr<vulkan::image_view> _depth_image_view;
+
+        uint32_t _mip_levels;
 
         size_t _current_frame = 0;
         bool _framebuffer_resized = false;

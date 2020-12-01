@@ -4,7 +4,7 @@
 
 namespace owl::vulkan
 {
-    sampler::sampler(const std::shared_ptr<logical_device>& logical_device)
+    sampler::sampler(const std::shared_ptr<logical_device>& logical_device, uint32_t mip_levels)
         : _logical_device(logical_device)
     {
         VkSamplerCreateInfo sampler_info{};
@@ -23,7 +23,7 @@ namespace owl::vulkan
         sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
         sampler_info.mipLodBias = 0.0f;
         sampler_info.minLod = 0.0f;
-        sampler_info.maxLod = 0.0f;
+        sampler_info.maxLod = static_cast<uint32_t>(mip_levels);
 
         auto result = vkCreateSampler(_logical_device->get_vk_handle(), &sampler_info, nullptr, &_vk_handle);
         helpers::handle_result(result, "Failed to create sampler");

@@ -15,6 +15,7 @@ namespace owl::vulkan
     public:
         image_view(const std::shared_ptr<logical_device>& logical_device,
                    const VkImage& image,
+                   const uint32_t mip_levels,
                    VkFormat format,
                    VkImageAspectFlags aspect_flags);
         ~image_view();

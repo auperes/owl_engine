@@ -10,6 +10,7 @@ namespace owl::vulkan
                  const uint32_t width,
                  const uint32_t height,
                  const uint32_t mip_levels,
+                 VkSampleCountFlagBits samples,
                  VkFormat format,
                  VkImageTiling tiling,
                  VkImageUsageFlags usage,
@@ -34,7 +35,7 @@ namespace owl::vulkan
         image_info.initialLayout = _layout;
         image_info.usage = usage;
         image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+        image_info.samples = samples;
         image_info.flags = 0;
 
         auto result = vkCreateImage(_logical_device->get_vk_handle(), &image_info, nullptr, &_vk_handle);

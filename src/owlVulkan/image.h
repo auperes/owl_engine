@@ -20,6 +20,7 @@ namespace owl::vulkan
               const uint32_t width,
               const uint32_t height,
               const uint32_t mip_levels,
+              VkSampleCountFlagBits samples,
               VkFormat format,
               VkImageTiling tiling,
               VkImageUsageFlags usage,

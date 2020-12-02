@@ -10,7 +10,10 @@ namespace owl::vulkan
     class render_pass : public vulkan_object<VkRenderPass>
     {
     public:
-        render_pass(const std::shared_ptr<logical_device>& logical_device, const VkFormat color_format, const VkFormat depth_format);
+        render_pass(const std::shared_ptr<logical_device>& logical_device,
+                    const VkFormat color_format,
+                    const VkFormat depth_format,
+                    VkSampleCountFlagBits samples);
         ~render_pass();
 
     private:

@@ -19,7 +19,8 @@ namespace owl::vulkan
                           const std::shared_ptr<logical_device>& logical_device,
                           const std::shared_ptr<swapchain>& swapchain,
                           const std::shared_ptr<pipeline_layout>& pipeline_layout,
-                          const std::shared_ptr<render_pass>& render_pass);
+                          const std::shared_ptr<render_pass>& render_pass,
+                          VkSampleCountFlagBits samples);
         ~graphics_pipeline();
 
     private:
@@ -31,7 +32,7 @@ namespace owl::vulkan
             const std::array<VkVertexInputAttributeDescription, 3>& attribute_descriptions);
         VkPipelineInputAssemblyStateCreateInfo create_input_assembly_state_info();
         VkPipelineRasterizationStateCreateInfo create_rasterization_state_info();
-        VkPipelineMultisampleStateCreateInfo create_multisample_state_info();
+        VkPipelineMultisampleStateCreateInfo create_multisample_state_info(VkSampleCountFlagBits samples);
         VkPipelineColorBlendStateCreateInfo create_color_blend_attachment_state_info(
             const VkPipelineColorBlendAttachmentState& color_blend_attachment);
         VkPipelineDepthStencilStateCreateInfo create_depth_stencil_state_info();

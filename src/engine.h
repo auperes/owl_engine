@@ -98,7 +98,11 @@ namespace owl
         std::shared_ptr<vulkan::image> _depth_image;
         std::shared_ptr<vulkan::image_view> _depth_image_view;
 
+        std::shared_ptr<vulkan::image> _color_image;
+        std::shared_ptr<vulkan::image_view> _color_image_view;
+
         uint32_t _mip_levels;
+        VkSampleCountFlagBits _msaa_samples = VK_SAMPLE_COUNT_1_BIT;
 
         size_t _current_frame = 0;
         bool _framebuffer_resized = false;
@@ -130,6 +134,7 @@ namespace owl
         void create_texture_sampler();
         void create_depth_resources();
         void load_model();
+        void create_color_resources();
 
         void recreate_swapchain();
 

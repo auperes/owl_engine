@@ -24,6 +24,7 @@ namespace owl::vulkan
         VkFormat get_depth_format();
         queue_families_indices find_queue_families();
         swapchain_support query_swapchain_support();
+        VkSampleCountFlagBits get_max_usable_sample_count();
 
     private:
         std::shared_ptr<instance> _instance;

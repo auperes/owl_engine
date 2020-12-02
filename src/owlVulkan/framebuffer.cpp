@@ -6,14 +6,17 @@
 
 namespace owl::vulkan
 {
-    framebuffer::framebuffer(const std::shared_ptr<vulkan::image_view>& image_view,
+    framebuffer::framebuffer(const std::shared_ptr<vulkan::image_view>& color_image_view,
                              const std::shared_ptr<vulkan::image_view>& depth_image_view,
+                             const std::shared_ptr<vulkan::image_view>& image_view,
                              const std::shared_ptr<render_pass>& render_pass,
                              const std::shared_ptr<swapchain>& swapchain,
                              const std::shared_ptr<logical_device>& logical_device)
         : _logical_device(logical_device)
     {
-        std::array<VkImageView, 2> attachments = {image_view->get_vk_handle(), depth_image_view->get_vk_handle()};
+        std::array<VkImageView, 3> attachments = {color_image_view->get_vk_handle(),
+                                                  depth_image_view->get_vk_handle(),
+                                                  image_view->get_vk_handle()};
 
         VkFramebufferCreateInfo framebuffer_info{};
         framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;

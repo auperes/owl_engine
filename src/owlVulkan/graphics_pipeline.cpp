@@ -11,7 +11,8 @@ namespace owl::vulkan
                                          const std::shared_ptr<logical_device>& logical_device,
                                          const std::shared_ptr<swapchain>& swapchain,
                                          const std::shared_ptr<pipeline_layout>& pipeline_layout,
-                                         const std::shared_ptr<render_pass>& render_pass)
+                                         const std::shared_ptr<render_pass>& render_pass,
+                                         VkSampleCountFlagBits samples)
         : _logical_device(logical_device)
     {
         // TODO see if shader_module destruction can be done in create_shader_stage_info()
@@ -47,7 +48,7 @@ namespace owl::vulkan
         viewport_state_create_info.pScissors = &scissor;
 
         auto rasterization_state_info = create_rasterization_state_info();
-        auto multisample_state_info = create_multisample_state_info();
+        auto multisample_state_info = create_multisample_state_info(samples);
 
         VkPipelineColorBlendAttachmentState color_blend_attachment{};
         color_blend_attachment.colorWriteMask =
@@ -142,13 +143,13 @@ namespace owl::vulkan
         return rasterization_state_info;
     }
 
-    VkPipelineMultisampleStateCreateInfo graphics_pipeline::create_multisample_state_info()
+    VkPipelineMultisampleStateCreateInfo graphics_pipeline::create_multisample_state_info(VkSampleCountFlagBits samples)
     {
         VkPipelineMultisampleStateCreateInfo multisample_state_info{};
         multisample_state_info.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
         multisample_state_info.sampleShadingEnable = VK_FALSE;
-        multisample_state_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-        multisample_state_info.minSampleShading = 1.0f;
+        multisample_state_info.rasterizationSamples = samples;
+        multisample_state_info.minSampleShading = 0.2f;
         multisample_state_info.pSampleMask = nullptr;
         multisample_state_info.alphaToCoverageEnable = VK_FALSE;
         multisample_state_info.alphaToOneEnable = VK_FALSE;

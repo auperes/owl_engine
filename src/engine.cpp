@@ -71,6 +71,7 @@ namespace owl
         create_surface();
 
         _physical_device = std::make_shared<vulkan::physical_device>(_instance, _surface, device_extensions);
+        _msaa_samples = _physical_device->get_max_usable_sample_count();
         _logical_device = std::make_shared<vulkan::logical_device>(_physical_device,
                                                                    _surface,
                                                                    device_extensions,
@@ -82,6 +83,7 @@ namespace owl
         create_render_pass();
         create_descriptor_set_layout();
         create_graphics_pipeline();
+        create_color_resources();
         create_depth_resources();
         create_framebuffers();
 
@@ -215,7 +217,7 @@ namespace owl
         auto depth_format = _physical_device->get_depth_format();
         auto color_format = _swapchain->get_vk_swapchain_image_format();
 
-        _render_pass = std::make_shared<vulkan::render_pass>(_logical_device, color_format, depth_format);
+        _render_pass = std::make_shared<vulkan::render_pass>(_logical_device, color_format, depth_format, _msaa_samples);
     }
 
     void engine::create_graphics_pipeline()
@@ -226,7 +228,8 @@ namespace owl
                                                                          _logical_device,
                                                                          _swapchain,
                                                                          _pipeline_layout,
-                                                                         _render_pass);
+                                                                         _render_pass,
+                                                                         _msaa_samples);
     }
 
     void engine::create_command_buffers()
@@ -281,8 +284,12 @@ namespace owl
         _swapchain_framebuffers.reserve(_swapchain_image_views.size());
         for (const auto& image_view : _swapchain_image_views)
         {
-            _swapchain_framebuffers.push_back(
-                std::make_shared<vulkan::framebuffer>(image_view, _depth_image_view, _render_pass, _swapchain, _logical_device));
+            _swapchain_framebuffers.push_back(std::make_shared<vulkan::framebuffer>(_color_image_view,
+                                                                                    _depth_image_view,
+                                                                                    image_view,
+                                                                                    _render_pass,
+                                                                                    _swapchain,
+                                                                                    _logical_device));
         }
     }
 
@@ -327,6 +334,7 @@ namespace owl
                                             static_cast<uint32_t>(texture_width),
                                             static_cast<uint32_t>(texture_height),
                                             _mip_levels,
+                                            VK_SAMPLE_COUNT_1_BIT,
                                             VK_FORMAT_R8G8B8A8_SRGB,
                                             VK_IMAGE_TILING_OPTIMAL,
                                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -358,6 +366,7 @@ namespace owl
                                                        _swapchain->get_vk_swapchain_extent().width,
                                                        _swapchain->get_vk_swapchain_extent().height,
                                                        1,
+                                                       _msaa_samples,
                                                        depth_format,
                                                        VK_IMAGE_TILING_OPTIMAL,
                                                        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -368,6 +377,27 @@ namespace owl
                                                                  1,
                                                                  depth_format,
                                                                  VK_IMAGE_ASPECT_DEPTH_BIT);
+    }
+
+    void engine::create_color_resources()
+    {
+        VkFormat color_format = _swapchain->get_vk_swapchain_image_format();
+        _color_image = std::make_shared<vulkan::image>(_physical_device,
+                                                       _logical_device,
+                                                       _swapchain->get_vk_swapchain_extent().width,
+                                                       _swapchain->get_vk_swapchain_extent().height,
+                                                       1,
+                                                       _msaa_samples,
+                                                       color_format,
+                                                       VK_IMAGE_TILING_OPTIMAL,
+                                                       VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        _color_image_view = std::make_shared<vulkan::image_view>(_logical_device,
+                                                                 _color_image->get_vk_handle(),
+                                                                 1,
+                                                                 color_format,
+                                                                 VK_IMAGE_ASPECT_COLOR_BIT);
     }
 
     void engine::recreate_swapchain()
@@ -389,6 +419,7 @@ namespace owl
         create_image_views();
         create_render_pass();
         create_graphics_pipeline();
+        create_color_resources();
         create_depth_resources();
         create_framebuffers();
         create_uniform_buffers();
@@ -399,6 +430,8 @@ namespace owl
 
     void engine::clean_swapchain()
     {
+        _color_image_view = nullptr;
+        _color_image = nullptr;
         _depth_image_view = nullptr;
         _depth_image = nullptr;
         _swapchain_framebuffers.clear();

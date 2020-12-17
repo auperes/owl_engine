@@ -1,4 +1,4 @@
-#include "engine.h"
+#include "vulkan_window.h"
 
 #include <cstdlib>
 #include <exception>
@@ -6,11 +6,10 @@
 
 int main()
 {
-    owl::engine engine;
-
     try
     {
-        engine.run();
+        owl::vulkan_window window(800, 600);
+        window.run();
     }
     catch (const std::exception& ex)
     {

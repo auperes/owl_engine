@@ -58,9 +58,16 @@ namespace owl::vulkan
 
         VkResult result = vkCreateInstance(&create_info, nullptr, &_vk_handle);
         vulkan::helpers::handle_result(result, "Failed to create instance");
+
+        if (enable_validation_layers)
+            _debug_messenger = std::make_unique<vulkan::debug_messenger>(_vk_handle);
     }
 
-    instance::~instance() { vkDestroyInstance(_vk_handle, nullptr); }
+    instance::~instance()
+    {
+        _debug_messenger = nullptr;
+        vkDestroyInstance(_vk_handle, nullptr);
+    }
 
     bool instance::check_validation_layer_support(const std::vector<const char*>& validation_layers)
     {

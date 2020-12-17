@@ -4,7 +4,6 @@
 
 #include <memory>
 
-#include "instance.h"
 #include "vulkan_object.h"
 
 namespace owl::vulkan
@@ -12,7 +11,7 @@ namespace owl::vulkan
     class debug_messenger : public vulkan_object<VkDebugUtilsMessengerEXT>
     {
     public:
-        explicit debug_messenger(const std::shared_ptr<instance>& instance);
+        explicit debug_messenger(const VkInstance& vk_instance);
         ~debug_messenger();
 
         static void configure_debug_create_info(VkDebugUtilsMessengerCreateInfoEXT& create_info);
@@ -23,6 +22,6 @@ namespace owl::vulkan
                                                              void* user_data);
 
     private:
-        std::shared_ptr<instance> _instance;
+        const VkInstance& _vk_instance;
     };
 } // namespace owl::vulkan

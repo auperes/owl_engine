@@ -28,24 +28,12 @@ namespace owl::vulkan
         auto vertex_input_create_info = create_vertex_input_state_info(binding_description, attribute_descriptions);
         auto input_assembly_create_info = create_input_assembly_state_info();
 
-        VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.y = 0.0f;
-        viewport.width = (float)swapchain->get_vk_swapchain_extent().width;
-        viewport.height = (float)swapchain->get_vk_swapchain_extent().height;
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-
-        VkRect2D scissor{};
-        scissor.offset = {0, 0};
-        scissor.extent = swapchain->get_vk_swapchain_extent();
-
         VkPipelineViewportStateCreateInfo viewport_state_create_info{};
         viewport_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
         viewport_state_create_info.viewportCount = 1;
-        viewport_state_create_info.pViewports = &viewport;
+        viewport_state_create_info.pViewports = VK_NULL_HANDLE; // handled with dynamic states;
         viewport_state_create_info.scissorCount = 1;
-        viewport_state_create_info.pScissors = &scissor;
+        viewport_state_create_info.pScissors = VK_NULL_HANDLE; // handled with dynamic states;
 
         auto rasterization_state_info = create_rasterization_state_info();
         auto multisample_state_info = create_multisample_state_info(samples);
@@ -64,6 +52,13 @@ namespace owl::vulkan
 
         auto depth_stencil_info = create_depth_stencil_state_info();
 
+        VkDynamicState dynamic_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+
+        VkPipelineDynamicStateCreateInfo dynamic_state_info{};
+        dynamic_state_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        dynamic_state_info.dynamicStateCount = 2;
+        dynamic_state_info.pDynamicStates = dynamic_states;
+
         VkGraphicsPipelineCreateInfo graphics_pipeline_info{};
         graphics_pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         graphics_pipeline_info.stageCount = 2;
@@ -75,7 +70,7 @@ namespace owl::vulkan
         graphics_pipeline_info.pMultisampleState = &multisample_state_info;
         graphics_pipeline_info.pDepthStencilState = &depth_stencil_info;
         graphics_pipeline_info.pColorBlendState = &color_blend_state_info;
-        graphics_pipeline_info.pDynamicState = nullptr;
+        graphics_pipeline_info.pDynamicState = &dynamic_state_info;
         graphics_pipeline_info.layout = pipeline_layout->get_vk_handle();
         graphics_pipeline_info.renderPass = render_pass->get_vk_handle();
         graphics_pipeline_info.subpass = 0;

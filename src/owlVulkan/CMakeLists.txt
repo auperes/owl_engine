@@ -7,7 +7,6 @@ set(HEADERS
     descriptor_set_layout.h
     descriptor_sets.h
     device_memory.h
-    matrix.h
     fence.h
     framebuffer.h
     graphics_pipeline.h
@@ -18,7 +17,7 @@ set(HEADERS
     image.h
     instance.h
     logical_device.h
-    mesh.h
+    matrix.h
     physical_device.h
     pipeline_layout.h
     pipeline.h
@@ -71,7 +70,12 @@ target_include_directories(
   owlVulkan
   PRIVATE ${VULKAN_PATH}/Include
   PRIVATE ${GLM_INCLUDE}
+  PRIVATE ${PROJECT_SOURCE_DIR}/owlModel
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/helpers)
 
-target_link_libraries(owlVulkan PRIVATE ${VULKAN_PATH}/Lib/vulkan-1.lib)
+add_dependencies(owlVulkan owlModel)
+target_link_libraries(
+  owlVulkan
+  PRIVATE ${VULKAN_PATH}/Lib/vulkan-1.lib)
+  # ${CMAKE_CURRENT_BINARY_DIR}/../owlModel/libowlModel.dll.a)

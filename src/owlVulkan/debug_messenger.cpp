@@ -6,17 +6,17 @@
 
 namespace owl::vulkan
 {
-    debug_messenger::debug_messenger(const std::shared_ptr<instance>& instance)
-        : _instance(instance)
+    debug_messenger::debug_messenger(const VkInstance& vk_instance)
+        : _vk_instance(vk_instance)
     {
         VkDebugUtilsMessengerCreateInfoEXT create_info{};
         configure_debug_create_info(create_info);
 
         auto create_debug_utils_messenger =
-            (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(_instance->get_vk_handle(), "vkCreateDebugUtilsMessengerEXT");
+            (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(_vk_instance, "vkCreateDebugUtilsMessengerEXT");
 
         VkResult result = create_debug_utils_messenger != nullptr
-                              ? create_debug_utils_messenger(_instance->get_vk_handle(), &create_info, nullptr, &_vk_handle)
+                              ? create_debug_utils_messenger(_vk_instance, &create_info, nullptr, &_vk_handle)
                               : VK_ERROR_EXTENSION_NOT_PRESENT;
 
         vulkan::helpers::handle_result(result, "Failed to setup debug messenger");
@@ -25,9 +25,9 @@ namespace owl::vulkan
     debug_messenger::~debug_messenger()
     {
         auto destroy_debug_utils_messenger =
-            (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(_instance->get_vk_handle(), "vkDestroyDebugUtilsMessengerEXT");
+            (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(_vk_instance, "vkDestroyDebugUtilsMessengerEXT");
         if (destroy_debug_utils_messenger != nullptr)
-            destroy_debug_utils_messenger(_instance->get_vk_handle(), _vk_handle, nullptr);
+            destroy_debug_utils_messenger(_vk_instance, _vk_handle, nullptr);
     }
 
     void debug_messenger::configure_debug_create_info(VkDebugUtilsMessengerCreateInfoEXT& create_info)

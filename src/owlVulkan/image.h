@@ -25,6 +25,8 @@ namespace owl::vulkan
               VkImageTiling tiling,
               VkImageUsageFlags usage,
               VkMemoryPropertyFlags properties);
+
+        image(image&&) = default;
         ~image();
 
         VkFormat get_format() const { return _format; }

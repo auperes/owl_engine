@@ -22,12 +22,17 @@ set(GLM_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/../third_parties/glm-0.9.9.8)
 set(STB_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/../third_parties/stb)
 set(TINY_OBJ_LOADER_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/../third_parties/tinyobjloader)
 
+add_subdirectory(owlModel)
 add_subdirectory(owlVulkan)
-add_subdirectory(owlGui)
 
-set(HEADERS engine.h)
+set(HEADERS
+  vulkan_engine.h
+  vulkan_window.h)
 
-set(SOURCES main.cpp engine.cpp)
+set(SOURCES
+  main.cpp
+  vulkan_engine.cpp
+  vulkan_window.cpp)
 
 add_executable(OwlEngine ${SOURCES} ${HEADERS})
 
@@ -39,14 +44,25 @@ target_include_directories(
   PRIVATE ${GLM_INCLUDE}
   PRIVATE ${STB_INCLUDE}
   PRIVATE ${TINY_OBJ_LOADER_INCLUDE}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/owlModel
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/owlVulkan)
 
-add_dependencies(OwlEngine owlVulkan)
+add_dependencies(OwlEngine owlModel owlVulkan)
 target_link_libraries(
   OwlEngine
   PRIVATE ${GLFW_LIB}
   PRIVATE ${VULKAN_PATH}/Lib/vulkan-1.lib
+          # ${CMAKE_CURRENT_BINARY_DIR}/owlModel/libowlModel.dll.a
           ${CMAKE_CURRENT_BINARY_DIR}/owlVulkan/libowlVulkan.dll.a)
+
+#copy libowlModel.dll to .exe directory
+# add_custom_command(
+#   TARGET OwlEngine
+#   POST_BUILD
+#   COMMAND
+#     ${CMAKE_COMMAND} -E copy
+#     ${CMAKE_CURRENT_BINARY_DIR}/owlModel/libowlModel.dll
+#     ${CMAKE_CURRENT_BINARY_DIR})
 
 #copy libowlVulkan.dll to .exe directory
 add_custom_command(
@@ -76,7 +92,7 @@ add_custom_command(
     ${CMAKE_CURRENT_SOURCE_DIR}/resources/models
     ${CMAKE_CURRENT_BINARY_DIR}/resources/models)
 
-#compile and coyp shaders in binary directory
+#compile and copy shaders in binary directory
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/shaders)
 add_custom_command(
   TARGET OwlEngine

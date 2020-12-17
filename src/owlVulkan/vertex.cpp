@@ -1,12 +1,9 @@
 #include "vertex.h"
 
+#include <vertex.h>
+
 namespace owl::vulkan
 {
-    bool vertex::operator==(const vertex& other) const
-    {
-        return position == other.position && color == other.color && texture_coordinates == other.texture_coordinates;
-    }
-
     VkVertexInputBindingDescription get_binding_description()
     {
         VkVertexInputBindingDescription binding_description{};

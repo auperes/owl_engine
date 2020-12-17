@@ -82,6 +82,21 @@ namespace owl::vulkan
 
         vkCmdBindPipeline(vk_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline->get_vk_handle());
 
+        VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width = (float)swapchain->get_vk_swapchain_extent().width;
+        viewport.height = (float)swapchain->get_vk_swapchain_extent().height;
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+
+        VkRect2D scissor{};
+        scissor.offset = {0, 0};
+        scissor.extent = swapchain->get_vk_swapchain_extent();
+
+        vkCmdSetViewport(vk_command_buffer, 0, 1, &viewport);
+        vkCmdSetScissor(vk_command_buffer, 0, 1, &scissor);
+
         VkBuffer vertex_buffers[] = {vertex_buffer->get_vk_handle()};
         VkDeviceSize offsets[] = {0};
 

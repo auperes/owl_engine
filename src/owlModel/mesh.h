@@ -4,7 +4,7 @@
 
 #include "vertex.h"
 
-namespace owl::vulkan
+namespace owl
 {
     struct mesh
     {

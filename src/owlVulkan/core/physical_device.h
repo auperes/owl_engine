@@ -24,11 +24,12 @@ namespace owl::vulkan::core
         VkFormat get_depth_format();
         queue_families_indices find_queue_families();
         swapchain_support query_swapchain_support();
-        VkSampleCountFlagBits get_max_usable_sample_count();
+        VkSampleCountFlagBits get_max_usable_sample_count() const { return _max_usable_samples; };
 
     private:
         std::shared_ptr<instance> _instance;
         std::shared_ptr<surface> _surface;
+        VkSampleCountFlagBits _max_usable_samples = VK_SAMPLE_COUNT_1_BIT;
 
         bool is_device_suitable(const VkPhysicalDevice& device, const std::vector<const char*>& required_device_extensions);
         bool check_device_extension_support(const VkPhysicalDevice& device, const std::vector<const char*>& required_device_extensions);
@@ -38,5 +39,6 @@ namespace owl::vulkan::core
         std::vector<VkSurfaceFormatKHR> get_surface_formats(const VkPhysicalDevice& device);
         std::vector<VkPresentModeKHR> get_surface_present_modes(const VkPhysicalDevice& device);
         swapchain_support query_swapchain_support(const VkPhysicalDevice& device);
+        VkSampleCountFlagBits compute_max_usable_sample_count();
     };
 } // namespace owl::vulkan

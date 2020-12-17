@@ -67,7 +67,6 @@ namespace owl
     void vulkan_engine::initialize(uint32_t width, uint32_t height, mesh&& mesh, texture&& texture)
     {
         _physical_device = std::make_shared<vulkan::core::physical_device>(_instance, _surface, device_extensions);
-        _msaa_samples = _physical_device->get_max_usable_sample_count();
         _logical_device = std::make_shared<vulkan::core::logical_device>(_physical_device,
                                                                          _surface,
                                                                          device_extensions,
@@ -78,8 +77,15 @@ namespace owl
         _command_pool = std::make_shared<vulkan::core::command_pool>(_logical_device, _surface, indices.graphics_family.value());
 
         create_swapchain(width, height); // swapchain
-        create_image_views();            // swapchain
         create_render_pass();            // swapchain
+        _swapchain->create_framebuffers(_render_pass);
+        create_texture_resources(std::move(texture)); // TODO merge with image view // need command pool
+
+        _indices_size = static_cast<uint32_t>(mesh.indices.size());
+        create_buffers(std::move(mesh)); // use mesh // need command pool
+
+        create_uniform_buffers(); // swapchain
+        create_descriptor_pool(); // swapchain
 
         _descriptor_set_layout = std::make_shared<vulkan::core::descriptor_set_layout>(_logical_device);
         _pipeline_layout = std::make_shared<vulkan::core::pipeline_layout>(_logical_device, _descriptor_set_layout);
@@ -89,21 +95,10 @@ namespace owl
                                                                                _swapchain,
                                                                                _pipeline_layout,
                                                                                _render_pass,
-                                                                               _msaa_samples);
+                                                                               _physical_device->get_max_usable_sample_count());
 
-        create_color_resources(); // swapchain
-        create_depth_resources(); // swapchain
-        create_framebuffers();    // swapchain
-
-        create_texture_resources(std::move(texture)); // TODO merge with image view // need command pool
-
-        _indices_size = static_cast<uint32_t>(mesh.indices.size());
-        create_buffers(std::move(mesh)); // use mesh // need command pool
-
-        create_uniform_buffers();              // swapchain
-        create_descriptor_pool();              // swapchain
-        create_descriptor_sets();              // swapchain
-        create_command_buffers(_indices_size); // swapchain // need command pool
+        create_descriptor_sets();              // swapchain // need descriptor_set_layout
+        create_command_buffers(_indices_size); // swapchain // need pipeline_layout, graphics_pipeline, command_pool
 
         create_synchronization_objects();
     }
@@ -213,9 +208,9 @@ namespace owl
     void vulkan_engine::create_uniform_buffers()
     {
         VkDeviceSize buffer_size = sizeof(vulkan::model_view_projection);
-        _uniform_buffers.resize(_swapchain->get_vk_swapchain_images().size());
+        _uniform_buffers.resize(_swapchain->get_vk_images().size());
 
-        for (size_t i = 0; i < _swapchain->get_vk_swapchain_images().size(); ++i)
+        for (size_t i = 0; i < _swapchain->get_vk_images().size(); ++i)
         {
             _uniform_buffers[i] =
                 std::make_shared<vulkan::core::buffer>(_physical_device,
@@ -229,29 +224,32 @@ namespace owl
 
     void vulkan_engine::create_swapchain(uint32_t width, uint32_t height)
     {
-        _swapchain = std::make_shared<vulkan::core::swapchain>(_physical_device, _logical_device, _surface, width, height);
+        _swapchain = std::make_shared<vulkan::core::swapchain>(_physical_device, _logical_device, _surface, _render_pass, width, height);
     }
 
     void vulkan_engine::create_descriptor_pool()
     {
-        _descriptor_pool = std::make_shared<vulkan::core::descriptor_pool>(_logical_device, _swapchain->get_vk_swapchain_images().size());
+        _descriptor_pool = std::make_shared<vulkan::core::descriptor_pool>(_logical_device, _swapchain->get_vk_images().size());
     }
 
     void vulkan_engine::create_render_pass()
     {
         auto depth_format = _physical_device->get_depth_format();
-        auto color_format = _swapchain->get_vk_swapchain_image_format();
+        auto color_format = _swapchain->get_vk_image_format();
 
-        _render_pass = std::make_shared<vulkan::core::render_pass>(_logical_device, color_format, depth_format, _msaa_samples);
+        _render_pass = std::make_shared<vulkan::core::render_pass>(_logical_device,
+                                                                   color_format,
+                                                                   depth_format,
+                                                                   _physical_device->get_max_usable_sample_count());
     }
 
     void vulkan_engine::create_command_buffers(uint32_t indices_size)
     {
-        _command_buffers = std::make_shared<vulkan::core::command_buffers>(_logical_device, _command_pool, _swapchain_framebuffers.size());
+        _command_buffers =
+            std::make_shared<vulkan::core::command_buffers>(_logical_device, _command_pool, _swapchain->get_framebuffers().size());
         _command_buffers->process_command_buffers(0, [this, indices_size](const VkCommandBuffer& vk_command_buffer, size_t index) {
             vulkan::core::process_engine_command_buffer(vk_command_buffer,
                                                         index,
-                                                        _swapchain_framebuffers,
                                                         _graphics_pipeline,
                                                         _render_pass,
                                                         _swapchain,
@@ -271,34 +269,7 @@ namespace owl
                                                                            _uniform_buffers,
                                                                            _texture_image_view,
                                                                            _texture_sampler,
-                                                                           _swapchain->get_vk_swapchain_images().size());
-    }
-
-    void vulkan_engine::create_image_views()
-    {
-        _swapchain_image_views.reserve(_swapchain->get_vk_swapchain_images().size());
-        for (const auto& image : _swapchain->get_vk_swapchain_images())
-        {
-            _swapchain_image_views.push_back(std::make_shared<vulkan::core::image_view>(_logical_device,
-                                                                                        image,
-                                                                                        1,
-                                                                                        _swapchain->get_vk_swapchain_image_format(),
-                                                                                        VK_IMAGE_ASPECT_COLOR_BIT));
-        }
-    }
-
-    void vulkan_engine::create_framebuffers()
-    {
-        _swapchain_framebuffers.reserve(_swapchain_image_views.size());
-        for (const auto& image_view : _swapchain_image_views)
-        {
-            _swapchain_framebuffers.push_back(std::make_shared<vulkan::core::framebuffer>(_color_image_view,
-                                                                                          _depth_image_view,
-                                                                                          image_view,
-                                                                                          _render_pass,
-                                                                                          _swapchain,
-                                                                                          _logical_device));
-        }
+                                                                           _swapchain->get_vk_images().size());
     }
 
     void vulkan_engine::create_synchronization_objects()
@@ -307,7 +278,7 @@ namespace owl
         _render_finished_semaphores.reserve(MAX_FRAMES_IN_FLIGHT);
 
         _in_flight_fences.reserve(MAX_FRAMES_IN_FLIGHT);
-        _in_flight_images.resize(_swapchain->get_vk_swapchain_images().size(), nullptr);
+        _in_flight_images.resize(_swapchain->get_vk_images().size(), nullptr);
 
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
         {
@@ -352,59 +323,14 @@ namespace owl
         _texture_sampler = std::make_shared<vulkan::core::sampler>(_logical_device, _mip_levels);
     }
 
-    void vulkan_engine::create_depth_resources()
-    {
-        VkFormat depth_format = _physical_device->get_depth_format();
-        _depth_image = std::make_shared<vulkan::core::image>(_physical_device,
-                                                             _logical_device,
-                                                             _swapchain->get_vk_swapchain_extent().width,
-                                                             _swapchain->get_vk_swapchain_extent().height,
-                                                             1,
-                                                             _msaa_samples,
-                                                             depth_format,
-                                                             VK_IMAGE_TILING_OPTIMAL,
-                                                             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                                                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-        _depth_image_view = std::make_shared<vulkan::core::image_view>(_logical_device,
-                                                                       _depth_image->get_vk_handle(),
-                                                                       1,
-                                                                       depth_format,
-                                                                       VK_IMAGE_ASPECT_DEPTH_BIT);
-    }
-
-    void vulkan_engine::create_color_resources()
-    {
-        VkFormat color_format = _swapchain->get_vk_swapchain_image_format();
-        _color_image = std::make_shared<vulkan::core::image>(_physical_device,
-                                                             _logical_device,
-                                                             _swapchain->get_vk_swapchain_extent().width,
-                                                             _swapchain->get_vk_swapchain_extent().height,
-                                                             1,
-                                                             _msaa_samples,
-                                                             color_format,
-                                                             VK_IMAGE_TILING_OPTIMAL,
-                                                             VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-        _color_image_view = std::make_shared<vulkan::core::image_view>(_logical_device,
-                                                                       _color_image->get_vk_handle(),
-                                                                       1,
-                                                                       color_format,
-                                                                       VK_IMAGE_ASPECT_COLOR_BIT);
-    }
-
     void vulkan_engine::recreate_swapchain(uint32_t width, uint32_t height)
     {
         _logical_device->wait_idle();
         clean_swapchain();
 
         create_swapchain(width, height);
-        create_image_views();
         create_render_pass();
-        create_color_resources();
-        create_depth_resources();
-        create_framebuffers();
+        _swapchain->create_framebuffers(_render_pass);
         create_uniform_buffers();
         create_descriptor_pool();
         create_descriptor_sets();
@@ -413,14 +339,8 @@ namespace owl
 
     void vulkan_engine::clean_swapchain()
     {
-        _color_image_view = nullptr;
-        _color_image = nullptr;
-        _depth_image_view = nullptr;
-        _depth_image = nullptr;
-        _swapchain_framebuffers.clear();
         _command_buffers = nullptr;
         _render_pass = nullptr;
-        _swapchain_image_views.clear();
         _swapchain = nullptr;
         _uniform_buffers.clear();
         _descriptor_pool = nullptr;
@@ -432,7 +352,7 @@ namespace owl
         auto current_time = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
 
-        auto extent = _swapchain->get_vk_swapchain_extent();
+        auto extent = _swapchain->get_vk_extent();
         vulkan::model_view_projection mvp;
         mvp.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         mvp.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));

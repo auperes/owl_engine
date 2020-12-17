@@ -31,6 +31,8 @@ namespace owl::vulkan::core
 
         if (_vk_handle == VK_NULL_HANDLE)
             throw std::runtime_error("No suitable device found.");
+
+        _max_usable_samples = compute_max_usable_sample_count();
     }
 
     physical_device::~physical_device() {}
@@ -178,7 +180,7 @@ namespace owl::vulkan::core
         return indices;
     }
 
-    VkSampleCountFlagBits physical_device::get_max_usable_sample_count()
+    VkSampleCountFlagBits physical_device::compute_max_usable_sample_count()
     {
         VkPhysicalDeviceProperties physical_device_properties;
         vkGetPhysicalDeviceProperties(_vk_handle, &physical_device_properties);

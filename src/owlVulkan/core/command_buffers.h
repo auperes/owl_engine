@@ -39,7 +39,6 @@ namespace owl::vulkan::core
 
     void process_engine_command_buffer(const VkCommandBuffer& vk_command_buffer,
                                        size_t index,
-                                       const std::vector<std::shared_ptr<framebuffer>>& swapchain_framebuffers,
                                        const std::shared_ptr<graphics_pipeline>& graphics_pipeline,
                                        const std::shared_ptr<render_pass>& render_pass,
                                        const std::shared_ptr<swapchain>& swapchain,

@@ -68,11 +68,9 @@ namespace owl
         std::shared_ptr<vulkan::core::logical_device> _logical_device;
 
         std::shared_ptr<vulkan::core::swapchain> _swapchain;
-        std::vector<std::shared_ptr<vulkan::core::image_view>> _swapchain_image_views;
         std::shared_ptr<vulkan::core::render_pass> _render_pass;
         std::shared_ptr<vulkan::core::pipeline_layout> _pipeline_layout;
         std::shared_ptr<vulkan::core::graphics_pipeline> _graphics_pipeline;
-        std::vector<std::shared_ptr<vulkan::core::framebuffer>> _swapchain_framebuffers;
         std::shared_ptr<vulkan::core::command_pool> _command_pool;
         std::shared_ptr<vulkan::core::command_buffers> _command_buffers;
         std::shared_ptr<vulkan::core::descriptor_set_layout> _descriptor_set_layout;
@@ -93,14 +91,7 @@ namespace owl
         std::shared_ptr<vulkan::core::image_view> _texture_image_view;
         std::shared_ptr<vulkan::core::sampler> _texture_sampler;
 
-        std::shared_ptr<vulkan::core::image> _depth_image;
-        std::shared_ptr<vulkan::core::image_view> _depth_image_view;
-
-        std::shared_ptr<vulkan::core::image> _color_image;
-        std::shared_ptr<vulkan::core::image_view> _color_image_view;
-
         uint32_t _mip_levels;
-        VkSampleCountFlagBits _msaa_samples = VK_SAMPLE_COUNT_1_BIT;
 
         size_t _current_frame = 0;
         uint32_t _current_image_index = 0;
@@ -117,12 +108,8 @@ namespace owl
         void create_render_pass();
         void create_command_buffers(uint32_t indices_size);
         void create_descriptor_sets();
-        void create_image_views();
-        void create_framebuffers();
         void create_synchronization_objects();
         void create_texture_resources(texture&& texture);
-        void create_depth_resources();
-        void create_color_resources();
 
         void clean_swapchain();
 

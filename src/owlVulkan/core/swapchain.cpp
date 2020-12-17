@@ -13,6 +13,7 @@ namespace owl::vulkan::core
     swapchain::swapchain(const std::shared_ptr<physical_device>& physical_device,
                          const std::shared_ptr<logical_device>& logical_device,
                          const std::shared_ptr<surface>& surface,
+                         const std::shared_ptr<render_pass>& render_pass,
                          const uint32_t width,
                          const uint32_t height)
         : _physical_device(physical_device)
@@ -24,9 +25,15 @@ namespace owl::vulkan::core
         auto result = vkCreateSwapchainKHR(_logical_device->get_vk_handle(), &create_info, nullptr, &_vk_handle);
         vulkan::helpers::handle_result(result, "Failed to create swap chain");
 
-        _vk_swapchain_images = get_swapchain_images();
-        _vk_swapchain_image_format = create_info.imageFormat;
-        _vk_swapchain_extent = create_info.imageExtent;
+        _vk_image_format = create_info.imageFormat;
+        _vk_extent = create_info.imageExtent;
+        _vk_images = get_swapchain_images();
+
+        _color_image =
+            create_image(width, height, _vk_image_format, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        _color_image_view = create_image_view(_color_image->get_vk_handle(), _color_image->get_format(), VK_IMAGE_ASPECT_COLOR_BIT);
+        _depth_image = create_image(width, height, _physical_device->get_depth_format(), VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        _depth_image_view = create_image_view(_depth_image->get_vk_handle(), _depth_image->get_format(), VK_IMAGE_ASPECT_DEPTH_BIT);
     }
 
     swapchain::~swapchain() { vkDestroySwapchainKHR(_logical_device->get_vk_handle(), _vk_handle, nullptr); }
@@ -127,5 +134,40 @@ namespace owl::vulkan::core
             std::bind(enumerateSwapchainImages, _logical_device->get_vk_handle(), _vk_handle, std::placeholders::_1, std::placeholders::_2);
 
         return helpers::getElements<VkImage>(function);
+    }
+
+    std::shared_ptr<image> swapchain::create_image(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage)
+    {
+        return std::make_shared<vulkan::core::image>(_physical_device,
+                                                     _logical_device,
+                                                     width,
+                                                     height,
+                                                     1,
+                                                     _physical_device->get_max_usable_sample_count(),
+                                                     format,
+                                                     VK_IMAGE_TILING_OPTIMAL,
+                                                     usage,
+                                                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    }
+
+    std::shared_ptr<image_view> swapchain::create_image_view(const VkImage& vk_image, VkFormat format, VkImageAspectFlags aspect_flags)
+    {
+        return std::make_shared<vulkan::core::image_view>(_logical_device, vk_image, 1, format, aspect_flags);
+    }
+
+    void swapchain::create_framebuffers(const std::shared_ptr<render_pass>& render_pass)
+    {
+        _framebuffers.reserve(_vk_images.size());
+        for (const auto& image : _vk_images)
+        {
+            _framebuffers.push_back(std::make_shared<vulkan::core::framebuffer>(_color_image_view,
+                                                                                _depth_image_view,
+                                                                                image,
+                                                                                _vk_image_format,
+                                                                                render_pass,
+                                                                                _logical_device,
+                                                                                _vk_extent.width,
+                                                                                _vk_extent.height));
+        }
     }
 } // namespace owl::vulkan::core

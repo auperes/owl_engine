@@ -54,7 +54,6 @@ namespace owl::vulkan::core
 
     void process_engine_command_buffer(const VkCommandBuffer& vk_command_buffer,
                                        size_t index,
-                                       const std::vector<std::shared_ptr<framebuffer>>& swapchain_framebuffers,
                                        const std::shared_ptr<graphics_pipeline>& graphics_pipeline,
                                        const std::shared_ptr<render_pass>& render_pass,
                                        const std::shared_ptr<swapchain>& swapchain,
@@ -67,9 +66,9 @@ namespace owl::vulkan::core
         VkRenderPassBeginInfo render_pass_info{};
         render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         render_pass_info.renderPass = render_pass->get_vk_handle();
-        render_pass_info.framebuffer = swapchain_framebuffers[index]->get_vk_handle();
+        render_pass_info.framebuffer = swapchain->get_framebuffers()[index]->get_vk_handle();
         render_pass_info.renderArea.offset = {0, 0};
-        render_pass_info.renderArea.extent = swapchain->get_vk_swapchain_extent();
+        render_pass_info.renderArea.extent = swapchain->get_vk_extent();
 
         std::array<VkClearValue, 2> clear_values;
         clear_values[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -85,14 +84,14 @@ namespace owl::vulkan::core
         VkViewport viewport{};
         viewport.x = 0.0f;
         viewport.y = 0.0f;
-        viewport.width = (float)swapchain->get_vk_swapchain_extent().width;
-        viewport.height = (float)swapchain->get_vk_swapchain_extent().height;
+        viewport.width = (float)swapchain->get_vk_extent().width;
+        viewport.height = (float)swapchain->get_vk_extent().height;
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
 
         VkRect2D scissor{};
         scissor.offset = {0, 0};
-        scissor.extent = swapchain->get_vk_swapchain_extent();
+        scissor.extent = swapchain->get_vk_extent();
 
         vkCmdSetViewport(vk_command_buffer, 0, 1, &viewport);
         vkCmdSetScissor(vk_command_buffer, 0, 1, &scissor);

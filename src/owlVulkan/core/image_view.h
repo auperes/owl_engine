@@ -5,7 +5,6 @@
 #include <memory>
 
 #include "logical_device.h"
-#include "swapchain.h"
 #include "vulkan_object.h"
 
 namespace owl::vulkan::core
